@@ -67,13 +67,22 @@ func main() {
 	// create a []byte array from the string that looks like a json object
 	// TODO
 	jsonObjectPreUnmarshal := []byte(stringRepresentationOfJsonObject)
+	fmt.Println(jsonObjectPreUnmarshal)
 	// Unmarshal that object into a struct
 	// TODO a = ["\x67", "\x83", "\x39"]
-	fmt.Println(jsonObjectPreUnmarshal)
-
+	var simpleobject SimpleObject
+	err := json.Unmarshal(jsonObjectPreUnmarshal, &simpleobject)
+	if err != nil {
+		fmt.Println("Failed to Unmarshal")
+		return
+	}
+	fmt.Println("Unmarshalled")
+	fmt.Println(simpleobject)
 	// Marshal the populated struct back into a []bytes
 	// TODO
+	byteMarshal, _ := json.Marshal(simpleobject)
 
 	// Print the reconstructed []bytes (by using string())
 	// TODO
+	fmt.Println(string(byteMarshal))
 }
