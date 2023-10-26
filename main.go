@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"golang.org/x/net/websocket"
 )
@@ -19,8 +18,7 @@ func EchoServer(ws *websocket.Conn) {
 	// time.Sleep(time.Second * 3)
 	for {
 		fmt.Println("Actually responding")
-		fmt.Println("Hello from Jim")
-		fmt.Println(("Further Debug Statement"))
+		fmt.Println("Hello from Jim ")
 		buff := make([]byte, 1024)
 
 		// fmt.Println(string(buff))
@@ -48,12 +46,33 @@ func EchoServer(ws *websocket.Conn) {
 	}
 }
 
+type SimpleObject struct {
+	Name             string
+	Age              int
+	Favourite_Colour string
+}
+
 // This example demonstrates a trivial echo server.
 func main() {
-	http.Handle("/echo", websocket.Handler(EchoServer))
-	err := http.ListenAndServe(":12345", nil)
-	if err != nil {
-		panic("ListenAndServe: " + err.Error())
-	}
-	fmt.Println("Keep running")
+	// 	http.Handle("/echo", websocket.Handler(EchoServer))
+	// 	err := http.ListenAndServe(":12345", nil)
+	// 	if err != nil {
+	// 		panic("ListenAndServe: " + err.Error())
+	// 	}
+	// 	fmt.Println("Keep running")
+
+	// Take this string and print it out
+	stringRepresentationOfJsonObject := "{\"Name\":\"Alex\",\"Age\": 23,\"Favourite_Colour\": \"Blue\"}"
+	fmt.Println(stringRepresentationOfJsonObject)
+	// create a []byte array from the string that looks like a json object
+	// TODO
+
+	// Unmarshal that object into a struct
+	// TODO
+
+	// Marshal the populated struct back into a []bytes
+	// TODO
+
+	// Print the reconstructed []bytes (by using string())
+	// TODO
 }
