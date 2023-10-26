@@ -66,9 +66,10 @@ func main() {
 	fmt.Println(stringRepresentationOfJsonObject)
 	// create a []byte array from the string that looks like a json object
 	// TODO
-
+	jsonObjectPreUnmarshal := []byte(stringRepresentationOfJsonObject)
 	// Unmarshal that object into a struct
-	// TODO
+	// TODO a = ["\x67", "\x83", "\x39"]
+	fmt.Println(jsonObjectPreUnmarshal)
 
 	// Marshal the populated struct back into a []bytes
 	// TODO
