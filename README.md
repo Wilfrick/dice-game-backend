@@ -2,4 +2,4 @@
 
 This will serve as the backend for an online dice game.
 
-Written in GO
+Written in Go
