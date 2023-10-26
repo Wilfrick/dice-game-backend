@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 
 	"golang.org/x/net/websocket"
@@ -13,16 +14,35 @@ type NewGame struct {
 	Players []int
 }
 
-type PlayerMove struct {
+type PlayerMoveMsg struct { // client telling server what move they have made
 	PlayerID int
 	GameID   int
 	MoveSTR  string
 }
 
-type SimpleObject struct {
-	Name             string
-	Age              int
-	Favourite_Colour string
+type PlayerHandMsg struct { // server telling client what hand they have
+	PlayerID int
+	GameID   int
+	PlayerHand
+}
+
+type Message struct {
+	MessageType string
+	Contents    string // should then be further unpacked with JSON
+}
+
+// {"NewHand": {"PlayerID":234, "GameID":345, "Hand":[3,4,3,4,4]}}
+
+// {"${MessageType}: ${Contents}"}
+
+type PlayerHand []int
+
+func randomPlayerHand(length int) PlayerHand {
+	hand := make([]int, length)
+	for i := range hand {
+		hand[i] = rand.Intn(6) + 1
+	}
+	return hand
 }
 
 // Echo the data received on the WebSocket.
@@ -61,6 +81,10 @@ func EchoServer(ws *websocket.Conn) {
 	}
 }
 
+func SendHand(playerhand PlayerHand, ws *websocket.Conn) {
+	// ws.Write()
+}
+
 func BroadcastServer(ws *websocket.Conn) {
 	// Read a JSON object from the websocket
 
@@ -70,15 +94,13 @@ func BroadcastServer(ws *websocket.Conn) {
 	// Will send the MoveSTR to all other players in the same Game.
 
 	for {
-		fmt.Println("In Broadcast Server")
 		buff := make([]byte, 1024)
 		len_read, err := ws.Read(buff)
-		fmt.Println(buff[:len_read])
-		fmt.Println(string(buff))
+
 		if err != nil {
 			return
 		}
-		var playerMove PlayerMove
+		var playerMove PlayerMoveMsg
 		err = json.Unmarshal(buff[:len_read], &playerMove)
 		if err != nil {
 			fmt.Println("Couldn't unpack JSON")
@@ -89,37 +111,15 @@ func BroadcastServer(ws *websocket.Conn) {
 			// encoded_bytes, _ := json.Marshal(playerMove)
 			// fmt.Println(encoded_bytes)
 		}
+		// Test generating and sending a random player hand
+		random_hand := randomPlayerHand(5)
+
+		encoded_bytes, _ := json.Marshal(random_hand)
+		ws.Write(encoded_bytes)
 
 		ws.Write(buff[:len_read])
-		fmt.Println("Finished copying")
+		fmt.Println("Finished action response")
 	}
-}
-
-func exampleJSON() {
-	// Take this string and print it out
-	stringRepresentationOfJsonObject := "{\"Name\":\"Alex\",\"Age\": 23,\"Favourite_Colour\": \"Blue\"}"
-	fmt.Println(stringRepresentationOfJsonObject)
-	// create a []byte array from the string that looks like a json object
-	// TODO
-	jsonObjectPreUnmarshal := []byte(stringRepresentationOfJsonObject)
-	fmt.Println(jsonObjectPreUnmarshal)
-	// Unmarshal that object into a struct
-	// TODO a = ["\x67", "\x83", "\x39"]
-	var simpleobject SimpleObject
-	err := json.Unmarshal(jsonObjectPreUnmarshal, &simpleobject)
-	if err != nil {
-		fmt.Println("Failed to Unmarshal")
-		return
-	}
-	fmt.Println("Unmarshalled")
-	fmt.Println(simpleobject)
-	// Marshal the populated struct back into a []bytes
-	// TODO
-	byteMarshal, _ := json.Marshal(simpleobject)
-
-	// Print the reconstructed []bytes (by using string())
-	// TODO
-	fmt.Println(string(byteMarshal))
 }
 
 // This example demonstrates a trivial echo server.
@@ -130,7 +130,8 @@ func main() {
 	// 		panic("ListenAndServe: " + err.Error())
 	// 	}
 	// 	fmt.Println("Keep running")
-	exampleJSON()
+	rndm_hand := randomPlayerHand(5)
+	fmt.Println(rndm_hand)
 	http.Handle("/echo", websocket.Handler(BroadcastServer))
 	err := http.ListenAndServe(":12345", nil)
 	if err != nil {
