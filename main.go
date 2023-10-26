@@ -19,13 +19,18 @@ func EchoServer(ws *websocket.Conn) {
 	// time.Sleep(time.Second * 3)
 	for {
 		fmt.Println("Actually responding")
+		fmt.Println("Hello from Jim")
+		fmt.Println(("Further Debug Statement"))
 		buff := make([]byte, 1024)
+
+		// fmt.Println(string(buff))
 
 		len_read, err := ws.Read(buff)
 		if err != nil {
 			return
 		}
 		var newGame NewGame
+		// {"fname": "Alex", "age": 23}
 
 		err = json.Unmarshal(buff, &newGame)
 		if err != nil {
