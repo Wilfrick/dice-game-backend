@@ -9,7 +9,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *[]chan []byte) {
+func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan []byte]int) {
 
 	externalData := make(chan []byte)
 	go func() {
@@ -19,7 +19,9 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *[]chan []b
 			n, err := ws.Read(buff)
 			if err != nil {
 				fmt.Println(err.Error())
+				delete(*allChans, thisChan)
 				// should also remove thisChan from allChans, so allChans should probably be a map rather than a slice
+				// er.Error() == 'EOF' represents the connection closing
 				return
 			}
 			fmt.Println("Sending data internally: ", buff[:n])
@@ -35,18 +37,19 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *[]chan []b
 		case b := <-externalData:
 			fmt.Println("Received data from the outside")
 			ws.Write(b)
-			for _, c := range *allChans {
+			for c := range *allChans {
 				if c != thisChan {
 					c <- b
 				}
 			}
 			fmt.Println("Free case 2")
+			fmt.Println("Number of Connections", len(*allChans))
 		}
 	}
 }
 
 func main() {
-	connectionChannels := []chan []byte{}
+	connectionChannels := make(map[chan []byte]int)
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
 		c := make(chan []byte)
 
@@ -55,7 +58,7 @@ func main() {
 			time.Sleep(time.Second * 4)
 			c <- randomPlayerHand(4).assembleHandMessage()
 		}()
-		connectionChannels = append(connectionChannels, c)
+		connectionChannels[c] = 0
 		manageWsConn(ws, c, &connectionChannels)
 	}))
 	// I think we can write code down here.
@@ -69,7 +72,7 @@ func main() {
 
 	fmt.Println("Yes I can keep running")
 
-	err := http.ListenAndServe(":12345", nil)
+	err := http.ListenAndServe("localhost:12345", nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
