@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"golang.org/x/net/websocket"
 )
@@ -46,9 +48,28 @@ func main() {
 	connectionChannels := []chan []byte{}
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
 		c := make(chan []byte)
+
+		go func() {
+			encodedPlayerHand, _ := json.Marshal(randomPlayerHand(5))
+			c <- []byte(encodedPlayerHand)
+			time.Sleep(time.Second * 4)
+			encodedPlayerHand, _ = json.Marshal(randomPlayerHand(4))
+			c <- []byte(encodedPlayerHand)
+		}()
 		connectionChannels = append(connectionChannels, c)
 		manageWsConn(ws, c, &connectionChannels)
 	}))
+	// I think we can write code down here.
+	playerHand := randomPlayerHand(5)
+	// buff := make([]byte, 1024)
+	encodedPlayerHand, e := json.Marshal(playerHand)
+	if e != nil {
+		fmt.Println(e.Error())
+	}
+	fmt.Println(encodedPlayerHand)
+
+	fmt.Println("Yes I can keep running")
+
 	err := http.ListenAndServe(":12345", nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
