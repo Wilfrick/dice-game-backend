@@ -22,7 +22,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *[]chan []b
 				// should also remove thisChan from allChans, so allChans should probably be a map rather than a slice
 				return
 			}
-			fmt.Println("Sending data internally")
+			fmt.Println("Sending data internally: ", buff[:n])
 			externalData <- buff[:n]
 		}
 	}()
@@ -30,6 +30,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *[]chan []b
 		select {
 		case b := <-thisChan:
 			ws.Write(b)
+			fmt.Println("Wrote ", b)
 			fmt.Println("Free case 1")
 		case b := <-externalData:
 			fmt.Println("Received data from the outside")
@@ -50,11 +51,9 @@ func main() {
 		c := make(chan []byte)
 
 		go func() {
-			encodedPlayerHand, _ := json.Marshal(randomPlayerHand(5))
-			c <- []byte(encodedPlayerHand)
+			c <- randomPlayerHand(5).assembleHandMessage()
 			time.Sleep(time.Second * 4)
-			encodedPlayerHand, _ = json.Marshal(randomPlayerHand(4))
-			c <- []byte(encodedPlayerHand)
+			c <- randomPlayerHand(4).assembleHandMessage()
 		}()
 		connectionChannels = append(connectionChannels, c)
 		manageWsConn(ws, c, &connectionChannels)
