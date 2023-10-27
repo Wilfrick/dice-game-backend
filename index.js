@@ -1,11 +1,8 @@
-const ws = new WebSocket("ws://localhost:12345/echo");
+const ws = new WebSocket("ws://localhost:12345/ws");
 const sendTextBox = document.querySelector(".controls #sendTextBox")
 const sendTextBtn = document.querySelector(".controls #sendTextBtn")
 ws.onopen = (event) => {
-    ws.send("Hello server")
-    log("Send Hello server")
-    ws.send("Hi there")
-    log("Sent Hi there")
+    log("Web socket opened")
 }
 
 ws.onmessage = (event) => {
