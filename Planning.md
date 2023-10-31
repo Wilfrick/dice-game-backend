@@ -30,3 +30,10 @@ Big Data:
         Server distributes valid move among players
         Loop until round finishes, go back to (1)
         Loop until game finished, go back to (2)
+
+    Example Payload Messages:
+    ```
+    {"TypeDescriptor": "PlayerMove"}
+    {"TypeDescriptor": "PlayerMove", "Contents": {"MoveType": "Bet"}}
+    {"TypeDescriptor": "PlayerMove", "Contents": {"MoveType": "Bet", "Value": {"NumDice": 5, "FaceVal": 5}}
+    ```
