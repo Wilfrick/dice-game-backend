@@ -9,6 +9,8 @@ func (bet1 Bet) isGreaterThan(bet2 Bet) bool {
 	//1's special
 	//Otherwise 2<3<...<6
 
+	// The following modifies a copy of bet1, bet2
+	// So does not modify external state
 	if bet1.FaceVal == 1 {
 		bet1.FaceVal = 7
 		bet1.NumDice = bet1.NumDice * 2

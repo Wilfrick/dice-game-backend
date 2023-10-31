@@ -6,13 +6,30 @@ import (
 	"net/http"
 	"time"
 
+	"golang.org/x/exp/maps"
 	"golang.org/x/net/websocket"
 )
 
-func processUserMessage(userMessage Message) {
-	switch userMessage.Contents {
+func processUserMessage(userMessage Message, channels *map[chan []byte]int) {
+	var gameState GameState
+	gameState.PlayerChannels = maps.Keys(*channels)
+	switch userMessage.TypeDescriptor {
 	case "PlayerMove":
+		// If PlayerMove need to ensure that userMessage.Contents is of type PlayerMove
+		fmt.Println("Made it into PlayerMove switch")
+		var playerMove PlayerMove
+		buff, _ := json.Marshal(userMessage.Contents)
+		_ = json.Unmarshal(buff, &playerMove)
+		fmt.Println("Calling gamestate.processPlayerMove")
+		gameState.processPlayerMove(playerMove)
+		fmt.Println("Finished gamestate.processPlayerMove")
+		// if !valid {
+		// 	gameState.PlayerChannels[gameState.CurrentPlayerIndex] <- packMessage("Invalid Bet", "Invalid Bet selection. Please select a valid move")
+		// 	return
+		// }
+		// move was valid, broadcast new state
 
+		// will need to let players know the result of updating the game state
 	}
 
 }
@@ -50,7 +67,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan [
 			if e != nil {
 				fmt.Println(e.Error())
 			}
-			processUserMessage(message)
+			processUserMessage(message, allChans)
 
 			// old but useful code, echo + broadcast, will be removed in the future
 			ws.Write(b)

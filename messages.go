@@ -8,8 +8,21 @@ type Message struct {
 	Contents       interface{}
 }
 
+type RoundUpdateMessage struct { // lets the other players
+	PrevMove PlayerMove
+}
+
+type RoundResultMessage struct {
+	NewPlayerIndex int
+}
+
 func packMessage(TypeDescriptor string, Contents interface{}) []byte {
 	message := Message{TypeDescriptor, Contents}
+	encodedMessage := createEncodedMessage(message)
+	return encodedMessage
+}
+
+func createEncodedMessage(message Message) []byte {
 	encodedMessage, _ := json.Marshal(message)
 	return encodedMessage
 }
