@@ -9,6 +9,14 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+func processUserMessage(userMessage Message) {
+	switch userMessage.Contents {
+	case "PlayerMove":
+
+	}
+
+}
+
 func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan []byte]int) {
 
 	externalData := make(chan []byte)
@@ -36,6 +44,15 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan [
 			fmt.Println("Free case 1")
 		case b := <-externalData:
 			fmt.Println("Received data from the outside")
+			fmt.Println(string(b))
+			var message Message
+			e := json.Unmarshal(b, &message)
+			if e != nil {
+				fmt.Println(e.Error())
+			}
+			processUserMessage(message)
+
+			// old but useful code, echo + broadcast, will be removed in the future
 			ws.Write(b)
 			for c := range *allChans {
 				if c != thisChan {
