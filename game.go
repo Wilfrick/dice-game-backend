@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type GameState struct {
 	GameID             string
@@ -63,6 +66,41 @@ func (gameState *GameState) processPlayerMove(playerMove PlayerMove) bool {
 	gameState.PrevMove = playerMove
 
 	return true
+}
+
+// func getNewPlayerIndex () int {
+func (gameState GameState) PlayersAllDead() bool {
+	hand_sums := true
+	for _, hand := range gameState.PlayerHands {
+		if len(hand) > 0 {
+			hand_sums = false
+		}
+	}
+	return hand_sums
+}
+
+func (gameState *GameState) updatePlayerIndex(newbet Bet) error {
+	if len(gameState.PlayerHands) == 0 {
+		err := errors.New("can't update a Game with no players")
+		return err
+	} else if gameState.PlayersAllDead() {
+		return errors.New("all players are dead")
+	}
+	startingIndex := gameState.CurrentPlayerIndex
+	gameState.CurrentPlayerIndex += 1
+	gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
+	newPlayerDead := len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
+	for newPlayerDead {
+		gameState.CurrentPlayerIndex += 1
+		gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
+		if gameState.CurrentPlayerIndex == startingIndex {
+			//Have done a loop no Bueno
+			err := errors.New("looped around to our initial player. all other players dead")
+			return err
+		}
+		newPlayerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
+	}
+	return nil
 }
 
 // broadcast message function, to used as: gameState.broadcast(message)
