@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"errors"
@@ -41,7 +41,7 @@ type RoundResult struct {
 
 // GameResult{C win}
 
-func (gameState *GameState) processPlayerMove(playerMove PlayerMove) bool {
+func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 	switch playerMove.MoveType {
 	case "Bet":
 		fmt.Println("in ProcessPlayerMove, made into case 'Bet' ")

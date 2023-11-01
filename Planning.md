@@ -37,3 +37,6 @@ Big Data:
     {"TypeDescriptor": "PlayerMove", "Contents": {"MoveType": "Bet"}}
     {"TypeDescriptor": "PlayerMove", "Contents": {"MoveType": "Bet", "Value": {"NumDice": 5, "FaceVal": 5}}
     ```
+
+Package structure:
+    main

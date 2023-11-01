@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"math/rand"
@@ -6,14 +6,14 @@ import (
 
 type PlayerHand []int
 
-func randomPlayerHand(length int) PlayerHand {
+func RandomPlayerHand(length int) PlayerHand {
 	hand := make([]int, length)
 	for i := range hand {
 		hand[i] = rand.Intn(6) + 1
 	}
 	return hand
 }
-func (playerHand PlayerHand) assembleHandMessage() []byte {
+func (playerHand PlayerHand) AssembleHandMessage() []byte {
 	encodedMessage := packMessage("PlayerHand", playerHand)
 	return encodedMessage
 }
