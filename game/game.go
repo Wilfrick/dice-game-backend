@@ -18,9 +18,14 @@ type PlayerMove struct {
 	Value    Bet
 }
 
-type RoundResult struct {
+type RoundResult struct { // the result of the round
 	PlayerIndex int
 	Result      string // "dec", "inc", "lose", "win", "next"
+}
+
+type RoundUpdate struct { // a player made a specific move
+	MoveMade    PlayerMove
+	PlayerIndex int
 }
 
 // 3 players left, A1, B1, C4
@@ -45,6 +50,8 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 	switch playerMove.MoveType {
 	case "Bet":
 		fmt.Println("in ProcessPlayerMove, made into case 'Bet' ")
+		fmt.Println(*gameState)
+		fmt.Println(playerMove)
 		// validate bet
 		newBet := playerMove.Value
 		betValid := newBet.isGreaterThan(gameState.PrevMove.Value)
@@ -52,12 +59,20 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 			fmt.Println("Leaving processPlayerMove, case Bet, early")
 			return false //Representing invalid move / bet could not be made
 		}
+		// should also check that the player making the bet is the current player
+
+		gameState.broadcast(Message{"RoundUpdate", RoundUpdate{MoveMade: playerMove, PlayerIndex: gameState.CurrentPlayerIndex}})
+
+		gameState.PrevMove = playerMove
+
+		fmt.Println(playerMove)
+		fmt.Println(gameState.PrevMove)
+
 		// Update current player
-		// gameState.CurrentPlayerIndex += 1
-		// gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
-		// should send some messages
-		message := Message{TypeDescriptor: "PlayerMove", Contents: "Random values"}
-		gameState.broadcast(message)
+		gameState.updatePlayerIndex(playerMove)
+
+		gameState.broadcast(Message{"RoundResult", RoundResult{PlayerIndex: gameState.CurrentPlayerIndex, Result: "next"}})
+
 		fmt.Println("Just broadcasted 'random values'")
 		return true
 	case "Dudo":
@@ -79,7 +94,7 @@ func (gameState GameState) PlayersAllDead() bool {
 	return hand_sums
 }
 
-func (gameState *GameState) updatePlayerIndex(newbet Bet) error {
+func (gameState *GameState) updatePlayerIndex(newbet PlayerMove) error {
 	if len(gameState.PlayerHands) == 0 {
 		err := errors.New("can't update a Game with no players")
 		return err

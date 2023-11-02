@@ -11,8 +11,9 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func processUserMessage(userMessage game.Message, channels *map[chan []byte]int) {
-	var gameState game.GameState
+func processUserMessage(userMessage game.Message, channels *map[chan []byte]int, allGames *map[int]*game.GameState) {
+	gameState := (*allGames)[0]
+	fmt.Println("Printing gamestate", gameState)
 	gameState.PlayerChannels = maps.Keys(*channels)
 	switch userMessage.TypeDescriptor {
 	case "PlayerMove":
@@ -35,7 +36,7 @@ func processUserMessage(userMessage game.Message, channels *map[chan []byte]int)
 
 }
 
-func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan []byte]int) {
+func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan []byte]int, allGames *map[int]*game.GameState) {
 
 	externalData := make(chan []byte)
 	go func() {
@@ -68,7 +69,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan [
 			if e != nil {
 				fmt.Println(e.Error())
 			}
-			processUserMessage(message, allChans)
+			processUserMessage(message, allChans, allGames)
 
 			// old but useful code, echo + broadcast, will be removed in the future
 			ws.Write(b)
@@ -85,6 +86,8 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan [
 
 func main() {
 	connectionChannels := make(map[chan []byte]int)
+	activeGames := make(map[int]*game.GameState)
+	activeGames[0] = &game.GameState{}
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
 		c := make(chan []byte)
 
@@ -94,7 +97,7 @@ func main() {
 			c <- game.RandomPlayerHand(4).AssembleHandMessage()
 		}()
 		connectionChannels[c] = 0
-		manageWsConn(ws, c, &connectionChannels)
+		manageWsConn(ws, c, &connectionChannels, &activeGames)
 	}))
 	// I think we can write code down here.
 	playerHand := game.RandomPlayerHand(5)
