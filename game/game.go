@@ -14,7 +14,7 @@ type GameState struct {
 }
 
 type PlayerMove struct {
-	MoveType string // "Bet", "dudo", "calza"
+	MoveType string // "Bet", "Dudo", "Calza"
 	Value    Bet
 }
 
@@ -26,6 +26,16 @@ type RoundResult struct { // the result of the round
 type RoundUpdate struct { // a player made a specific move
 	MoveMade    PlayerMove
 	PlayerIndex int
+}
+
+type GameResult struct {
+	PlayerIndex int
+	Result      string // "win", "lose"
+}
+
+type GameUpdate struct {
+	PlayerHandLengths []int
+	PlayerHand        PlayerHand
 }
 
 // 3 players left, A1, B1, C4
@@ -76,7 +86,44 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 		fmt.Println("Just broadcasted 'random values'")
 		return true
 	case "Dudo":
+		fmt.Println("in ProcessPlayerMove, made into case 'Dudo' ")
+		fmt.Println(*gameState)
+		fmt.Println(playerMove)
+		// validate bet
+		// dudo should always be valid, as long as the current player
+		gameState.broadcast(Message{"RoundUpdate", RoundUpdate{
+			PlayerIndex: gameState.CurrentPlayerIndex,
+			MoveMade:    PlayerMove{MoveType: "Dudo"},
+		}})
 
+		// calculate the result of the call:
+		// 1) who loses a dice (always happens)
+		bet_true := gameState.isBetTrue()
+
+		var losing_player_index int
+		if bet_true {
+			losing_player_index = gameState.CurrentPlayerIndex
+		} else {
+			losing_player_index = gameState.PreviousAlivePlayer()
+		}
+
+		gameState.broadcast(Message{"RoundResult", RoundResult{losing_player_index, "dec"}})
+
+		player_died := gameState.RemoveDice(losing_player_index)
+		if player_died {
+			gameState.broadcast(Message{"RoundResult", RoundResult{losing_player_index, "lose"}})
+			gameState.send(losing_player_index, Message{"GameResult", GameResult{losing_player_index, "lose"}})
+		}
+		// 2) possible who has now lost ()
+		gameState.updatePlayerIndex(playerMove)
+
+		gameState.generateNewHands()
+
+		gameState.distributeHands() // send hand messages to each player with personalised hand info
+		// 3) Send new hands out to all players (likely different messages to different players)
+
+		// 4) Inform players who's turn is next
+		gameState.broadcast(Message{"RoundResult", RoundResult{gameState.CurrentPlayerIndex, "next"}})
 	}
 	gameState.PrevMove = playerMove
 

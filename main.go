@@ -18,6 +18,9 @@ func processUserMessage(userMessage game.Message, channels *map[chan []byte]int,
 	switch userMessage.TypeDescriptor {
 	case "PlayerMove":
 		// If PlayerMove need to ensure that userMessage.Contents is of type PlayerMove
+
+		// could check here to make sure that this message is coming from the current player
+
 		fmt.Println("Made it into PlayerMove switch")
 		var playerMove game.PlayerMove
 		buff, _ := json.Marshal(userMessage.Contents)
