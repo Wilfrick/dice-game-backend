@@ -1,6 +1,7 @@
 package main
 
 import (
+	"HigherLevelPerudoServer/game"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,18 +11,22 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func processUserMessage(userMessage Message, channels *map[chan []byte]int) {
-	var gameState GameState
+func processUserMessage(userMessage game.Message, channels *map[chan []byte]int, allGames *map[int]*game.GameState) {
+	gameState := (*allGames)[0]
+	fmt.Println("Printing gamestate", gameState)
 	gameState.PlayerChannels = maps.Keys(*channels)
 	switch userMessage.TypeDescriptor {
 	case "PlayerMove":
 		// If PlayerMove need to ensure that userMessage.Contents is of type PlayerMove
+
+		// could check here to make sure that this message is coming from the current player
+
 		fmt.Println("Made it into PlayerMove switch")
-		var playerMove PlayerMove
+		var playerMove game.PlayerMove
 		buff, _ := json.Marshal(userMessage.Contents)
 		_ = json.Unmarshal(buff, &playerMove)
 		fmt.Println("Calling gamestate.processPlayerMove")
-		gameState.processPlayerMove(playerMove)
+		gameState.ProcessPlayerMove(playerMove)
 		fmt.Println("Finished gamestate.processPlayerMove")
 		// if !valid {
 		// 	gameState.PlayerChannels[gameState.CurrentPlayerIndex] <- packMessage("Invalid Bet", "Invalid Bet selection. Please select a valid move")
@@ -34,7 +39,7 @@ func processUserMessage(userMessage Message, channels *map[chan []byte]int) {
 
 }
 
-func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan []byte]int) {
+func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan []byte]int, allGames *map[int]*game.GameState) {
 
 	externalData := make(chan []byte)
 	go func() {
@@ -62,12 +67,12 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan [
 		case b := <-externalData:
 			fmt.Println("Received data from the outside")
 			fmt.Println(string(b))
-			var message Message
+			var message game.Message
 			e := json.Unmarshal(b, &message)
 			if e != nil {
 				fmt.Println(e.Error())
 			}
-			processUserMessage(message, allChans)
+			processUserMessage(message, allChans, allGames)
 
 			// old but useful code, echo + broadcast, will be removed in the future
 			ws.Write(b)
@@ -84,19 +89,21 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan [
 
 func main() {
 	connectionChannels := make(map[chan []byte]int)
+	activeGames := make(map[int]*game.GameState)
+	activeGames[0] = &game.GameState{}
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
 		c := make(chan []byte)
 
 		go func() {
-			c <- randomPlayerHand(5).assembleHandMessage()
+			c <- game.RandomPlayerHand(5).AssembleHandMessage()
 			time.Sleep(time.Second * 4)
-			c <- randomPlayerHand(4).assembleHandMessage()
+			c <- game.RandomPlayerHand(4).AssembleHandMessage()
 		}()
 		connectionChannels[c] = 0
-		manageWsConn(ws, c, &connectionChannels)
+		manageWsConn(ws, c, &connectionChannels, &activeGames)
 	}))
 	// I think we can write code down here.
-	playerHand := randomPlayerHand(5)
+	playerHand := game.RandomPlayerHand(5)
 	// buff := make([]byte, 1024)
 	encodedPlayerHand, e := json.Marshal(playerHand)
 	if e != nil {

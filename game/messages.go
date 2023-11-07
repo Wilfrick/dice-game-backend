@@ -1,4 +1,4 @@
-package main
+package game
 
 import "encoding/json"
 
@@ -6,14 +6,6 @@ import "encoding/json"
 type Message struct {
 	TypeDescriptor string
 	Contents       interface{}
-}
-
-type RoundUpdateMessage struct { // lets the other players
-	PrevMove PlayerMove
-}
-
-type RoundResultMessage struct {
-	NewPlayerIndex int
 }
 
 func packMessage(TypeDescriptor string, Contents interface{}) []byte {
