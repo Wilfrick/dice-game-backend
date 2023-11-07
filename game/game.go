@@ -1,8 +1,10 @@
 package game
 
 import (
+	"HigherLevelPerudoServer/util"
 	"errors"
 	"fmt"
+	"slices"
 )
 
 type GameState struct {
@@ -104,12 +106,19 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 		if bet_true {
 			losing_player_index = gameState.CurrentPlayerIndex
 		} else {
-			losing_player_index = gameState.PreviousAlivePlayer()
+			var err error
+			losing_player_index, err = gameState.PreviousAlivePlayer()
+			if err != nil {
+				fmt.Println(err.Error())
+			}
 		}
 
 		gameState.broadcast(Message{"RoundResult", RoundResult{losing_player_index, "dec"}})
 
-		player_died := gameState.RemoveDice(losing_player_index)
+		player_died, err := gameState.RemoveDice(losing_player_index)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 		if player_died {
 			gameState.broadcast(Message{"RoundResult", RoundResult{losing_player_index, "lose"}})
 			gameState.send(losing_player_index, Message{"GameResult", GameResult{losing_player_index, "lose"}})
@@ -176,4 +185,109 @@ func (gameState GameState) broadcast(message Message) {
 		// go func (){channel <- encodedMessage}() // likely to lead to untracable bugs, do not copy
 	}
 	fmt.Println("Finished broadcasting message")
+}
+
+func (gameState GameState) isBetTrue() bool {
+	fmt.Println("Called isBetTrue")
+	// TODO, for Dudo
+	bet := gameState.PrevMove.Value
+	dice_face_counts := count_dice_faces_considering_wild_ones(gameState)
+
+	return dice_face_counts[bet.FaceVal] >= bet.NumDice
+}
+
+func (gameState GameState) isBetExactlyTrue() bool {
+	fmt.Println("Called isBetExactlyTrue")
+	// TODO, for Calza
+	bet := gameState.PrevMove.Value
+	dice_face_counts := count_dice_faces_considering_wild_ones(gameState)
+
+	return dice_face_counts[bet.FaceVal] == bet.NumDice
+}
+
+func count_dice_faces(gameState GameState) []int {
+	dice_face_counts := make([]int, 7) // 7 is a magic number, it is one more than 6, which is the number of possible values that we allow for a dice. This could be refactored with a map to handle arbitrary dice face values.
+	for _, player_hand := range gameState.PlayerHands {
+		for _, dice_value := range player_hand {
+			dice_face_counts[dice_value]++
+		}
+	}
+	return dice_face_counts
+}
+
+func count_dice_faces_considering_wild_ones(gameState GameState) []int {
+	WILD_DICE_FACE_VALUE := 1
+	dice_face_counts := count_dice_faces(gameState)
+	for face_value := range dice_face_counts {
+		if face_value != WILD_DICE_FACE_VALUE {
+			dice_face_counts[face_value] += dice_face_counts[WILD_DICE_FACE_VALUE] // ones are wild in this game
+		}
+	}
+	return dice_face_counts
+}
+
+func (gameState GameState) PreviousAlivePlayer() (int, error) {
+	fmt.Println("Called PreviousAlivePlayer")
+	alive_player_indices := util.Filter(func(player_index int) bool { return player_index >= 0 },
+		util.Mapi(func(p PlayerHand, index int) int {
+			if len(p) > 0 {
+				return len(p)
+			} else {
+				return -1
+			}
+		}, gameState.PlayerHands))
+
+	if len(alive_player_indices) <= 1 {
+		return -1, errors.New("not enough alive players") // the game should have already finished by now
+	}
+	current_player_relative_position := slices.Index(alive_player_indices, gameState.CurrentPlayerIndex)
+	if current_player_relative_position == -1 {
+		return -1, errors.New("couldn't find current player in the list of alive players")
+	}
+
+	if current_player_relative_position == 0 {
+		return alive_player_indices[len(alive_player_indices)-1], nil
+	}
+	return alive_player_indices[current_player_relative_position-1], nil
+}
+
+func (gameState *GameState) RemoveDice(player_index int) (bool, error) {
+	fmt.Println("Called RemoveDice")
+	// should do bounds checking for player_index
+	if player_index < 0 || player_index >= len(gameState.PlayerHands) {
+		return false, errors.New("bad player index")
+	}
+	if len(gameState.PlayerHands[player_index]) <= 0 {
+		return true, errors.New("this player is already dead")
+	}
+
+	gameState.PlayerHands = append(make([]PlayerHand, len(gameState.PlayerHands[player_index])), gameState.PlayerHands[:len(gameState.PlayerHands[player_index])-1]...)
+
+	// returns true if the player that lost a dice is now dead
+	return len(gameState.PlayerHands[player_index]) == 0, nil
+}
+
+func (gameState GameState) send(player_index int, msg Message) {
+	fmt.Println("Called send")
+	go func() { gameState.PlayerChannels[player_index] <- createEncodedMessage(msg) }()
+}
+
+func (gameState *GameState) generateNewHands() {
+	fmt.Println("Called generateNewHands")
+	for _, hand := range gameState.PlayerHands {
+		hand.Randomise()
+	}
+}
+
+func (gameState GameState) distributeHands() {
+	fmt.Println("Called distributeHands")
+	// TODO
+	player_hand_lengths := util.Map(func(p PlayerHand) int { return len(p) }, gameState.PlayerHands)
+	for playerHandIndex, playerHand := range gameState.PlayerHands {
+		gameState.send(playerHandIndex,
+			Message{"GameUpdate",
+				GameUpdate{PlayerHand: playerHand,
+					PlayerHandLengths: append(player_hand_lengths[playerHandIndex:],
+						player_hand_lengths[:playerHandIndex]...)}})
+	}
 }

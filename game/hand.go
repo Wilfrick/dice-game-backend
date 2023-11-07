@@ -13,6 +13,11 @@ func RandomPlayerHand(length int) PlayerHand {
 	}
 	return hand
 }
+
+func (playerHand *PlayerHand) Randomise() {
+	copy(*playerHand, RandomPlayerHand(len([]int(*playerHand))))
+}
+
 func (playerHand PlayerHand) AssembleHandMessage() []byte {
 	encodedMessage := packMessage("PlayerHand", playerHand)
 	return encodedMessage
