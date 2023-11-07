@@ -1,5 +1,9 @@
 package util
 
+import (
+	"testing"
+)
+
 func Map[P, Q any](fpq func(P) Q, ps []P) []Q { // Map implementation from https://stackoverflow.com/a/72498530
 	result := make([]Q, len(ps))
 	for i, p := range ps {
@@ -35,3 +39,21 @@ func Filteri[P any](predicate func(P, int) bool, ps []P) []P {
 	}
 	return result
 }
+
+func Assert(t *testing.T, b bool) {
+	if !b {
+		t.Fail()
+	}
+}
+
+func InitialiseChans[P any](channels []chan P) []chan P {
+	copy(channels, Map(func(p chan P) chan P { return make(chan P) }, channels))
+	return channels
+}
+
+// func CreateInitialisedChannels[P any](n int) []chan P {
+// 	empty := make([]chan P, n)
+// 	filled := InitialiseChans(empty)
+// 	return filled
+
+// }
