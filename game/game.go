@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sync"
 )
 
 type GameState struct {
@@ -35,9 +36,16 @@ type GameResult struct {
 	Result      string // "win", "lose"
 }
 
-type GameUpdate struct {
+type SinglePlayerHandContents struct {
+	PlayerHand PlayerHand
+}
+
+type PlayerHandLengthsUpdate struct {
 	PlayerHandLengths []int
-	PlayerHand        PlayerHand
+}
+
+type PlayerHandContents struct {
+	PlayerHands []PlayerHand
 }
 
 // 3 players left, A1, B1, C4
@@ -178,10 +186,15 @@ func (gameState *GameState) updatePlayerIndex(newbet PlayerMove) error {
 
 func (gameState GameState) broadcast(message Message) {
 	fmt.Println("Trying to broadcast message")
-	encodedMessage := createEncodedMessage(message)
-	for _, channel := range gameState.PlayerChannels {
+	// encodedMessage := createEncodedMessage(message)
+	// for _, channel := range gameState.PlayerChannels {
+	// 	fmt.Println("Sending message")
+	// 	go func(c chan []byte) { c <- encodedMessage }(channel)
+	// 	// go func (){channel <- encodedMessage}() // likely to lead to untracable bugs, do not copy
+	// }
+	for player_index := range gameState.PlayerChannels {
 		fmt.Println("Sending message")
-		go func(c chan []byte) { c <- encodedMessage }(channel)
+		gameState.send(player_index, message)
 		// go func (){channel <- encodedMessage}() // likely to lead to untracable bugs, do not copy
 	}
 	fmt.Println("Finished broadcasting message")
@@ -267,9 +280,19 @@ func (gameState *GameState) RemoveDice(player_index int) (bool, error) {
 	return len(gameState.PlayerHands[player_index]) == 0, nil
 }
 
-func (gameState GameState) send(player_index int, msg Message) {
+func (gameState GameState) send(player_index int, msg Message, wait_groups ...*sync.WaitGroup) {
+	if len(wait_groups) == 1 {
+		wait_groups[0].Add(1)
+	}
+
 	fmt.Println("Called send")
-	go func() { gameState.PlayerChannels[player_index] <- createEncodedMessage(msg) }()
+	go func() {
+		if len(wait_groups) == 1 {
+			defer wait_groups[0].Done()
+		}
+
+		gameState.PlayerChannels[player_index] <- createEncodedMessage(msg)
+	}()
 }
 
 func (gameState *GameState) generateNewHands() {
@@ -281,13 +304,13 @@ func (gameState *GameState) generateNewHands() {
 
 func (gameState GameState) distributeHands() {
 	fmt.Println("Called distributeHands")
-	// TODO
-	player_hand_lengths := util.Map(func(p PlayerHand) int { return len(p) }, gameState.PlayerHands)
+	var distribute_hands_wait_group sync.WaitGroup
 	for playerHandIndex, playerHand := range gameState.PlayerHands {
 		gameState.send(playerHandIndex,
-			Message{"GameUpdate",
-				GameUpdate{PlayerHand: playerHand,
-					PlayerHandLengths: append(player_hand_lengths[playerHandIndex:],
-						player_hand_lengths[:playerHandIndex]...)}})
+			Message{"SinglePlayerHandContents",
+				SinglePlayerHandContents{PlayerHand: playerHand}},
+			&distribute_hands_wait_group)
 	}
+	// Wait for all the hands to be sent
+	distribute_hands_wait_group.Wait()
 }
