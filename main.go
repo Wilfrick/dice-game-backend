@@ -62,7 +62,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan [
 		select {
 		case b := <-thisChan:
 			ws.Write(b)
-			fmt.Println("Wrote ", b)
+			// fmt.Println("Wrote ", b)
 			fmt.Println("Free case 1")
 		case b := <-externalData:
 			fmt.Println("Received data from the outside")

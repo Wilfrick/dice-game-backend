@@ -40,3 +40,5 @@ Big Data:
 
 Package structure:
     main
+
+{"TypeDescriptor":"RoundUpdate","Contents":{"MoveMade":{"MoveType":"Calza","Value":{"NumDice":0,"FaceVal":0}},"PlayerIndex":0}}

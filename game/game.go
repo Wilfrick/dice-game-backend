@@ -75,6 +75,7 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 		// validate bet
 		newBet := playerMove.Value
 		betValid := newBet.isGreaterThan(gameState.PrevMove.Value)
+		betValid = true
 		if !betValid {
 			fmt.Println("Leaving processPlayerMove, case Bet, early")
 			return false //Representing invalid move / bet could not be made
