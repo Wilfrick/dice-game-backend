@@ -7,7 +7,7 @@ func Test_updatePlayerIndexRunsEmptyPlayerHands(t *testing.T) {
 	var gamestate GameState
 	var newmove PlayerMove
 
-	err := gamestate.updatePlayerIndex(newmove) //Expecting success to be false
+	_, err := gamestate.updatePlayerIndex(newmove) //Expecting success to be false
 	if err == nil {
 		t.Fail()
 	}
@@ -19,7 +19,7 @@ func Test_updatePlayerIndexRunsNonEmptyPlayerHands(t *testing.T) {
 	var newmove PlayerMove
 	gamestate.PlayerHands = []PlayerHand{PlayerHand([]int{1, 3, 4, 5}), PlayerHand([]int{2, 4, 4}), PlayerHand([]int{4, 5, 4})}
 
-	err := gamestate.updatePlayerIndex(newmove) //Expecting success to be false
+	_, err := gamestate.updatePlayerIndex(newmove) //Expecting success to be false
 	if !(err == nil) {
 		t.Fail()
 	}
@@ -82,7 +82,7 @@ func Test_checkPlayerIndexAllPlayersDead(t *testing.T) {
 	gameState.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{NumDice: 2, FaceVal: 2}}
 	newBet := Bet{NumDice: 3, FaceVal: 2}
 
-	err := gameState.updatePlayerIndex(PlayerMove{MoveType: "Bet", Value: newBet}) //We expect to fail
+	_, err := gameState.updatePlayerIndex(PlayerMove{MoveType: "Bet", Value: newBet}) //We expect to fail
 	if !(err.Error() == "all players are dead") {
 		t.Fail()
 	}
@@ -99,7 +99,7 @@ func Test_checkPlayerIndexSinglePlayerAlive(t *testing.T) {
 	gameState.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{NumDice: 2, FaceVal: 2}}
 	newBet := Bet{NumDice: 3, FaceVal: 2}
 
-	err := gameState.updatePlayerIndex(PlayerMove{MoveType: "Bet", Value: newBet}) //We expect to fail
+	_, err := gameState.updatePlayerIndex(PlayerMove{MoveType: "Bet", Value: newBet}) //We expect to fail
 	if !(err.Error() == "looped around to our initial player. all other players dead") {
 		t.Fail()
 	}
