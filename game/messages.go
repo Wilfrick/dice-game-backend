@@ -8,7 +8,7 @@ type Message struct {
 	Contents       interface{}
 }
 
-func packMessage(TypeDescriptor string, Contents interface{}) []byte {
+func PackMessage(TypeDescriptor string, Contents interface{}) []byte {
 	message := Message{TypeDescriptor, Contents}
 	encodedMessage := createEncodedMessage(message)
 	return encodedMessage

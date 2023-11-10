@@ -57,3 +57,5 @@ func InitialiseChans[P any](channels []chan P) []chan P {
 // 	return filled
 
 // }
+
+func Len[P []any](p P) int { return len(p) } // doesn't seem to work always

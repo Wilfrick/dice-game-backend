@@ -10,7 +10,7 @@ import (
 func Test_generateNewHands(t *testing.T) {
 	var gameState GameState
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{7, 7, 7, 7}), PlayerHand([]int{7, 7, 7}), PlayerHand([]int{7, 7, 7})}
-	gameState.generateNewHands()
+	gameState.randomiseCurrentHands()
 
 	lengths := []int{4, 3, 3}
 	for i, hand := range gameState.PlayerHands {
@@ -108,9 +108,9 @@ func Test_distributeHands(t *testing.T) {
 
 	// assert that the results are as expected
 
-	true_result1 := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0]}})
-	true_result2 := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[1]}})
-	true_result3 := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[2]}})
+	true_result1 := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
+	true_result2 := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[1], 1}})
+	true_result3 := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[2], 2}})
 
 	util.Assert(t, bytes.Equal(result1, true_result1))
 	util.Assert(t, bytes.Equal(result2, true_result2))
@@ -121,6 +121,16 @@ func Test_distributeHands(t *testing.T) {
 
 }
 
+func Test_distributeSingularHand(t *testing.T) {
+	var gameState GameState
+	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{5, 6})}
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 1))
+	go gameState.distributeHands()
+
+	result := <-gameState.PlayerChannels[0]
+	true_result := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
+	util.Assert(t, bytes.Equal(result, true_result))
+}
 func Test_isBetTrueSimpleCase(t *testing.T) {
 	var gameState GameState
 	gameState.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{5, 2}}

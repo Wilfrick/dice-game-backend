@@ -19,6 +19,6 @@ func (playerHand *PlayerHand) Randomise() {
 }
 
 func (playerHand PlayerHand) AssembleHandMessage() []byte {
-	encodedMessage := packMessage("PlayerHand", playerHand)
+	encodedMessage := PackMessage("PlayerHand", playerHand)
 	return encodedMessage
 }
