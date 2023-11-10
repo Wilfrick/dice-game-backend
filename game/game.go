@@ -37,7 +37,8 @@ type GameResult struct {
 }
 
 type SinglePlayerHandContents struct {
-	PlayerHand PlayerHand
+	PlayerHand  PlayerHand
+	PlayerIndex int
 }
 
 type PlayerHandLengthsUpdate struct {
@@ -65,6 +66,27 @@ type PlayerHandContents struct {
 // RoundResult{C win}
 
 // GameResult{C win}
+
+func (gameState *GameState) StartNewGame() {
+	fmt.Println("Called StartNewGame")
+	// Things to do: Generate player hands
+	// Distribute player hands
+	// Broadcast PlayerHandsLengthsUpdate
+	// Choose a first player
+	// Broadcast first player?
+	gameState.PlayerHands = make([]PlayerHand, len(gameState.PlayerChannels))
+	for i := range gameState.PlayerHands {
+		gameState.PlayerHands[i] = RandomPlayerHand(5)
+	}
+	gameState.distributeHands()
+
+	InitialPlayerHandLengths := PlayerHandLengthsUpdate{util.Map(func(x PlayerHand) int { return len(x) }, gameState.PlayerHands)}
+	gameState.broadcast(Message{TypeDescriptor: "PlayerHandLengthsUpdate", Contents: InitialPlayerHandLengths})
+	gameState.CurrentPlayerIndex = 0
+	gameState.broadcast(Message{"RoundResult", RoundResult{gameState.CurrentPlayerIndex, "next"}})
+
+	fmt.Println("Ended StartNewGame")
+}
 
 func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 	switch playerMove.MoveType {
@@ -135,7 +157,7 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 		// 2) possible who has now lost ()
 		gameState.updatePlayerIndex(playerMove)
 
-		gameState.generateNewHands()
+		gameState.randomiseCurrentHands()
 
 		gameState.distributeHands() // send hand messages to each player with personalised hand info
 		// 3) Send new hands out to all players (likely different messages to different players)
@@ -275,7 +297,7 @@ func (gameState *GameState) RemoveDice(player_index int) (bool, error) {
 		return true, errors.New("this player is already dead")
 	}
 
-	gameState.PlayerHands = append(make([]PlayerHand, len(gameState.PlayerHands[player_index])), gameState.PlayerHands[:len(gameState.PlayerHands[player_index])-1]...)
+	gameState.PlayerHands = append(make([]PlayerHand, 0, len(gameState.PlayerHands[player_index])), gameState.PlayerHands[:len(gameState.PlayerHands[player_index])-1]...)
 
 	// returns true if the player that lost a dice is now dead
 	return len(gameState.PlayerHands[player_index]) == 0, nil
@@ -296,8 +318,8 @@ func (gameState GameState) send(player_index int, msg Message, wait_groups ...*s
 	}()
 }
 
-func (gameState *GameState) generateNewHands() {
-	fmt.Println("Called generateNewHands")
+func (gameState *GameState) randomiseCurrentHands() {
+	fmt.Println("Called randomiseCurrentHands")
 	for _, hand := range gameState.PlayerHands {
 		hand.Randomise()
 	}
@@ -309,9 +331,12 @@ func (gameState GameState) distributeHands() {
 	for playerHandIndex, playerHand := range gameState.PlayerHands {
 		gameState.send(playerHandIndex,
 			Message{"SinglePlayerHandContents",
-				SinglePlayerHandContents{PlayerHand: playerHand}},
+				SinglePlayerHandContents{PlayerHand: playerHand,
+					PlayerIndex: playerHandIndex}},
 			&distribute_hands_wait_group)
 	}
 	// Wait for all the hands to be sent
+	fmt.Println("Waiting for completion")
 	distribute_hands_wait_group.Wait()
+	fmt.Println("Completed")
 }

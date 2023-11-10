@@ -33,7 +33,9 @@ func processUserMessage(userMessage game.Message, channels *map[chan []byte]int,
 		// 	return
 		// }
 		// move was valid, broadcast new state
-
+	case "GameStart":
+		fmt.Println("Case: GameStart")
+		gameState.StartNewGame()
 		// will need to let players know the result of updating the game state
 	}
 
@@ -72,7 +74,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan [
 			if e != nil {
 				fmt.Println(e.Error())
 			}
-			processUserMessage(message, allChans, allGames)
+			go processUserMessage(message, allChans, allGames)
 
 			// old but useful code, echo + broadcast, will be removed in the future
 			ws.Write(b)
