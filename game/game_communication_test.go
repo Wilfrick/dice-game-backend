@@ -113,6 +113,63 @@ func Test_distributeSingularHand(t *testing.T) {
 	util.Assert(t, bytes.Equal(result, true_result))
 }
 
+
+func Test_broadcastSimple(t *testing.T) {
+	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 1))}
+	msg := Message{TypeDescriptor: "Bananas"}
+	go gs.broadcast(msg)
+	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], createEncodedMessage(msg)))
+}
+
+func Test_broadcastTwoPlayers(t *testing.T) {
+	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 2))}
+	msg := Message{TypeDescriptor: "Bananas"}
+	go gs.broadcast(msg)
+	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], createEncodedMessage(msg)))
+	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[1], createEncodedMessage(msg)))
+}
+func Test_broadcastWithWaitgroupSimple(t *testing.T) {
+	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 1))}
+	msg := Message{TypeDescriptor: "Bananas"}
+	use_waitgroup := true
+	go gs.broadcast(msg, use_waitgroup)
+	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], createEncodedMessage(msg)))
+}
+
+// THE BELOW TEST IS UNTESTED
+// MAY PROVIDE FURTHER TEST GUIDANCE
+// AND EDUCATIONAL CONTENT / CONTEXT
+
+// func Test_broadcastWithWaitgroupTwoPlayers(t *testing.T) {
+// 	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 2))}
+// 	msg := Message{TypeDescriptor: "Bananas"}
+// 	msg2 := Message{TypeDescriptor: "Oranges"}
+// 	counter := 0
+// 	go func(gs GameState, counter *int) {
+// 		*counter += 1
+// 		use_waitgroup := false
+// 		gs.broadcast(msg, use_waitgroup)
+// 		gs.broadcast(msg2, use_waitgroup)
+// 	}(gs, &counter)
+// 	<-gs.PlayerChannels[0]
+
+// 	go func(gs GameState, t *testing.T) {
+// 		<-gs.PlayerChannels[0]
+// 		res := <-gs.PlayerChannels[1]
+// 		if bytes.Equal(res, createEncodedMessage(msg)) {
+// 			t.Error("could extract values without waiting for all parties")
+// 		}
+// 		// fail?
+// 	}(gs, t)
+
+// 	go func(gs GameState) {
+// 		<-gs.PlayerChannels[1]
+// 		<-gs.PlayerChannels[0]
+// 		// succeed
+// 	}(gs)
+
+// }
+
 func Test_revealHandsBasic(t *testing.T) {
 	var gameState GameState
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{5, 6})}
@@ -151,3 +208,4 @@ func Test_revealHandsSomeDeadPlayers(t *testing.T) {
 	util.Assert(t, bytes.Equal(res3, true_result))
 	util.Assert(t, bytes.Equal(res4, true_result))
 }
+

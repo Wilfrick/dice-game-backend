@@ -7,12 +7,13 @@ import (
 )
 
 type GameState struct {
-	GameID             string
-	PlayerHands        []PlayerHand
-	CurrentPlayerIndex int // should be < len(PlayerHands)
-	PlayerChannels     []chan []byte
-	PrevMove           PlayerMove
-	GameInProgress     bool
+	GameID               string
+	PlayerHands          []PlayerHand
+	CurrentPlayerIndex   int // should be < len(PlayerHands)
+	PlayerChannels       []chan []byte
+	PrevMove             PlayerMove
+	GameInProgress       bool
+	AllowableChannelLock int // should live with PlayerChannels, wherever that ends up
 }
 
 type PlayerMove struct {
@@ -95,6 +96,7 @@ func (gameState *GameState) startNewRound() {
 }
 
 func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
+	defer func() { gameState.AllowableChannelLock = gameState.CurrentPlayerIndex }()
 	switch playerMove.MoveType {
 	case "Bet":
 		fmt.Println("in ProcessPlayerMove, made into case 'Bet' ")
@@ -124,6 +126,8 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 			fmt.Println(err.Error())
 			return false
 		}
+
+		// thread one
 
 		gameState.broadcast(Message{"RoundResult", RoundResult{PlayerIndex: gameState.CurrentPlayerIndex, Result: "next"}})
 
@@ -183,7 +187,6 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 		gameState.startNewRound()
 	}
 	gameState.PrevMove = playerMove
-
 	return true
 }
 
