@@ -92,12 +92,13 @@ func Test_processPlayerMoveDudoFalse(t *testing.T) {
 	}()
 	gs.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{5, 2}}
 	gs.CurrentPlayerIndex = 1
-	playerMove := PlayerMove{MoveType: "Dudo"} // False
+	playerMove := PlayerMove{MoveType: "Dudo"} // False, so P1 loses a dice
 	validity := gs.ProcessPlayerMove(playerMove)
 	if !validity {
 		t.Fail()
 	}
-	util.Assert(t, gs.CurrentPlayerIndex == 0)
+	t.Log(gs.CurrentPlayerIndex)
+	util.Assert(t, gs.CurrentPlayerIndex == 1)
 
 }
 
@@ -120,7 +121,7 @@ func Test_processPlayerMoveDudoTrue(t *testing.T) {
 		t.Fail()
 	}
 	t.Log(gs.CurrentPlayerIndex)
-	util.Assert(t, gs.CurrentPlayerIndex == 1)
+	util.Assert(t, gs.CurrentPlayerIndex == 0)
 
 }
 
@@ -147,12 +148,13 @@ func Test_processPlayerMoveDudoFalseKilling(t *testing.T) {
 	}()
 	gs.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{2, 2}}
 	gs.CurrentPlayerIndex = 1
-	playerMove := PlayerMove{MoveType: "Dudo"} // False 3 2's
+	playerMove := PlayerMove{MoveType: "Dudo"} // False 3 2's, so P1 loses and dies
 	validity := gs.ProcessPlayerMove(playerMove)
 	if !validity {
 		t.Log(validity)
 		t.Fail()
 	}
 	t.Log(gs.CurrentPlayerIndex)
+	t.Log(gs.PlayerHands)
 	util.Assert(t, gs.CurrentPlayerIndex == 2) //If a player dies, continue round the circle
 }

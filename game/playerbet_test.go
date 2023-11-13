@@ -1,6 +1,9 @@
 package game
 
-import "testing"
+import (
+	"HigherLevelPerudoServer/util"
+	"testing"
+)
 
 // The following tests how we update player turn
 func Test_updatePlayerIndexRunsEmptyPlayerHands(t *testing.T) {
@@ -98,4 +101,30 @@ func Test_checkPlayerIndexSinglePlayerAlive(t *testing.T) {
 		t.Log(err.Error())
 		t.FailNow()
 	}
+}
+
+func Test_updatePlayerIndexDudoTrue(t *testing.T) {
+	var gs GameState
+	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 3}), PlayerHand([]int{1}), PlayerHand([]int{5})}
+	gs.CurrentPlayerIndex = 1
+	losing_player_index := 0
+	err := gs.updatePlayerIndex(DUDO, losing_player_index)
+	if err != nil {
+		t.Fail()
+	}
+	t.Log(gs.CurrentPlayerIndex)
+	util.Assert(t, gs.CurrentPlayerIndex == 0)
+}
+
+func Test_updatePlayerIndexDudoFalse(t *testing.T) {
+	var gs GameState
+	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 3}), PlayerHand([]int{1}), PlayerHand([]int{5})}
+	gs.CurrentPlayerIndex = 1
+	losing_player_index := 1
+	err := gs.updatePlayerIndex(DUDO, losing_player_index)
+	if err != nil {
+		t.Fail()
+	}
+	t.Log(gs.CurrentPlayerIndex)
+	util.Assert(t, gs.CurrentPlayerIndex == 1)
 }

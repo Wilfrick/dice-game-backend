@@ -126,7 +126,7 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 
 		gameState.broadcast(Message{"RoundUpdate", RoundUpdate{MoveMade: playerMove, PlayerIndex: gameState.CurrentPlayerIndex}})
 
-		gameState.PrevMove = playerMove //Why is this here?
+		gameState.PrevMove = playerMove
 
 		// fmt.Println(playerMove)
 		// fmt.Println(gameState.PrevMove)
@@ -237,10 +237,15 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 				return true
 			}
 		}
+		err = gameState.updatePlayerIndex(CALZA, losing_player_index)
+		if err != nil {
+			fmt.Println(err)
+			return false
+		}
+		gameState.startNewRound()
 	default:
 		return false
 	}
-	gameState.PrevMove = playerMove
 	return true
 }
 
@@ -259,7 +264,6 @@ func (gameState *GameState) updatePlayerIndex(moveType MoveType, optional_player
 			gameState.CurrentPlayerIndex = optional_player_lose[0]
 		}
 	} else if moveType == BET {
-		fmt.Println("MoveType BET")
 		gameState.CurrentPlayerIndex += 1
 		gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
 	}
