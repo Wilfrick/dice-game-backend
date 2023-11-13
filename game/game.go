@@ -44,7 +44,7 @@ type PlayerHandLengthsUpdate struct {
 	PlayerHandLengths []int
 }
 
-type PlayerHandContents struct {
+type PlayerHandsContents struct {
 	PlayerHands []PlayerHand
 }
 

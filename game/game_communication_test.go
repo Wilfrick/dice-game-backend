@@ -112,3 +112,14 @@ func Test_distributeSingularHand(t *testing.T) {
 	true_result := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
 	util.Assert(t, bytes.Equal(result, true_result))
 }
+
+func Test_revealHandsBasic(t *testing.T) {
+	var gameState GameState
+	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{5, 6})}
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 1))
+	go gameState.revealHands()
+
+	result := <-gameState.PlayerChannels[0]
+	true_result := createEncodedMessage(Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	util.Assert(t, bytes.Equal(result, true_result))
+}
