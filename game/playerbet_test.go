@@ -99,11 +99,12 @@ func Test_checkPlayerIndexSinglePlayerAlive(t *testing.T) {
 	gameState.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{NumDice: 2, FaceVal: 2}}
 	newBet := Bet{NumDice: 3, FaceVal: 2}
 
-	_, err := gameState.updatePlayerIndex(PlayerMove{MoveType: "Bet", Value: newBet}) //We expect to fail
-	if !(err.Error() == "looped around to our initial player. all other players dead") {
-		t.Fail()
+	winning, err := gameState.updatePlayerIndex(PlayerMove{MoveType: "Bet", Value: newBet}) //We expect to fail
+	if err != nil {
+		t.Log(err.Error())
+		t.FailNow()
 	}
-	if err == nil {
+	if !winning {
 		t.Fail()
 	}
 }

@@ -1,7 +1,6 @@
 package game
 
 import (
-	"HigherLevelPerudoServer/util"
 	"errors"
 	"fmt"
 	"slices"
@@ -57,16 +56,22 @@ func count_dice_faces_considering_wild_ones(gameState GameState) []int {
 	return dice_face_counts
 }
 
+func (gameState GameState) alivePlayerIndices() []int {
+	// WRONG
+	// return util.Filter(func(player_index int) bool { return player_index > 0 },
+	// 	util.Map(func(p PlayerHand) int { return len(p) }, gameState.PlayerHands))
+	alivePlayerIndices := make([]int, 0, len(gameState.PlayerHands))
+	for i, playerHand := range gameState.PlayerHands {
+		if len(playerHand) > 0 {
+			alivePlayerIndices = append(alivePlayerIndices, i)
+		}
+	}
+	return alivePlayerIndices
+}
+
 func (gameState GameState) PreviousAlivePlayer() (int, error) {
 	fmt.Println("Called PreviousAlivePlayer")
-	alive_player_indices := util.Filter(func(player_index int) bool { return player_index >= 0 },
-		util.Mapi(func(p PlayerHand, index int) int {
-			if len(p) > 0 {
-				return len(p)
-			} else {
-				return -1
-			}
-		}, gameState.PlayerHands))
+	alive_player_indices := gameState.alivePlayerIndices()
 
 	if len(alive_player_indices) <= 1 {
 		return -1, errors.New("not enough alive players") // the game should have already finished by now
