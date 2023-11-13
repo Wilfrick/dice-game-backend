@@ -36,6 +36,12 @@ func (gameState GameState) distributeHands() {
 	fmt.Println("Completed")
 }
 
+
+func (gameState GameState) revealHands() {
+	playerHandContentsMessage := Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}}
+	gameState.broadcast(playerHandContentsMessage)
+}
+
 func (gameState GameState) broadcast(message Message, optional_use_wait_group ...bool) {
 	fmt.Println("Trying to broadcast message")
 	var wait_group sync.WaitGroup

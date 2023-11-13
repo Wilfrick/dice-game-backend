@@ -113,6 +113,7 @@ func Test_distributeSingularHand(t *testing.T) {
 	util.Assert(t, bytes.Equal(result, true_result))
 }
 
+
 func Test_broadcastSimple(t *testing.T) {
 	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 1))}
 	msg := Message{TypeDescriptor: "Bananas"}
@@ -168,3 +169,43 @@ func Test_broadcastWithWaitgroupSimple(t *testing.T) {
 // 	}(gs)
 
 // }
+
+func Test_revealHandsBasic(t *testing.T) {
+	var gameState GameState
+	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{5, 6})}
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 1))
+	go gameState.revealHands()
+
+	result := <-gameState.PlayerChannels[0]
+	true_result := createEncodedMessage(Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	util.Assert(t, bytes.Equal(result, true_result))
+}
+
+func Test_revealHandsTwoPlayers(t *testing.T) {
+	var gameState GameState
+	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{5, 6}), PlayerHand([]int{4, 4, 5})}
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 2))
+	go gameState.revealHands()
+
+	res1, res2 := <-gameState.PlayerChannels[0], <-gameState.PlayerChannels[1]
+
+	true_result := createEncodedMessage(Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	util.Assert(t, bytes.Equal(res1, true_result))
+	util.Assert(t, bytes.Equal(res2, true_result))
+}
+
+func Test_revealHandsSomeDeadPlayers(t *testing.T) {
+	var gameState GameState
+	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{}), PlayerHand([]int{4, 4, 5, 1, 1}), PlayerHand([]int{}), PlayerHand([]int{4, 4, 5})}
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 4))
+	go gameState.revealHands()
+
+	res1, res2, res3, res4 := <-gameState.PlayerChannels[0], <-gameState.PlayerChannels[1], <-gameState.PlayerChannels[2], <-gameState.PlayerChannels[3]
+
+	true_result := createEncodedMessage(Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	util.Assert(t, bytes.Equal(res1, true_result))
+	util.Assert(t, bytes.Equal(res2, true_result))
+	util.Assert(t, bytes.Equal(res3, true_result))
+	util.Assert(t, bytes.Equal(res4, true_result))
+}
+
