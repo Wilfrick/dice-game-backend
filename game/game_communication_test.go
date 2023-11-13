@@ -135,6 +135,43 @@ func Test_broadcastWithWaitgroupSimple(t *testing.T) {
 	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], createEncodedMessage(msg)))
 }
 
-func Test_broadcastWithWaitgroupTwoPlayers(t *testing.T) {
-	// TODO
+func xTest_broadcastWithWaitgroupTwoPlayers(t *testing.T) {
+	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 2))}
+	msg := Message{TypeDescriptor: "Bananas"}
+	msg2 := Message{TypeDescriptor: "Oranges"}
+	counter := 0
+	go func(gs GameState, counter *int) {
+		*counter += 1
+		use_waitgroup := false
+		gs.broadcast(msg, use_waitgroup)
+		gs.broadcast(msg2, use_waitgroup)
+	}(gs, &counter)
+	<-gs.PlayerChannels[0]
+
+	go func(gs GameState, t *testing.T) {
+		<-gs.PlayerChannels[0]
+		res := <-gs.PlayerChannels[1]
+		if bytes.Equal(res, createEncodedMessage(msg)) {
+			t.Error("could extract values without waiting for all parties")
+		}
+		// fail?
+	}(gs, t)
+
+	go func(gs GameState) {
+		<-gs.PlayerChannels[1]
+		<-gs.PlayerChannels[0]
+		// succeed
+	}(gs)
+
+}
+
+func xTest_consistent(t *testing.T) {
+	c := make(chan int)
+	//
+	l := []int{0}
+	go func() { <-c }()
+	go func() { c <- 0 }()
+	go func() { _ = l[<-c] }()
+	go func() { c <- 1 }()
+	_ = l[0]
 }

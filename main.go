@@ -26,7 +26,7 @@ func processUserMessage(userMessage game.Message, thisChan chan []byte, allChann
 		// thisChanIndex := slices.Index[[]chan []byte, chan []byte](gameState.PlayerChannels,thisChan)
 
 		thisChanIndex := slices.Index(gameState.PlayerChannels, thisChan)
-		if thisChanIndex != gameState.CurrentPlayerIndex {
+		if thisChanIndex != gameState.AllowableChannelLock {
 			thisChan <- game.PackMessage("NOT YOUR TURN", nil)
 			return
 		}
