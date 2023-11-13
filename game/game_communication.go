@@ -36,6 +36,11 @@ func (gameState GameState) distributeHands() {
 	fmt.Println("Completed")
 }
 
+func (gameState GameState) revealHands() {
+	playerHandContentsMessage := Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}}
+	gameState.broadcast(playerHandContentsMessage)
+}
+
 func (gameState GameState) broadcast(message Message) {
 	fmt.Println("Trying to broadcast message")
 	// encodedMessage := createEncodedMessage(message)
