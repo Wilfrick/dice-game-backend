@@ -10,7 +10,7 @@ func (gameState GameState) send(player_index int, msg Message, wait_groups ...*s
 		wait_groups[0].Add(1)
 	}
 
-	fmt.Println("Called send")
+	// fmt.Println("Called send")
 	go func() {
 		if len(wait_groups) == 1 {
 			defer wait_groups[0].Done()
@@ -36,14 +36,13 @@ func (gameState GameState) distributeHands() {
 	fmt.Println("Completed")
 }
 
-
 func (gameState GameState) revealHands() {
 	playerHandContentsMessage := Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}}
 	gameState.broadcast(playerHandContentsMessage)
 }
 
 func (gameState GameState) broadcast(message Message, optional_use_wait_group ...bool) {
-	fmt.Println("Trying to broadcast message")
+	// fmt.Println("Trying to broadcast message")
 	var wait_group sync.WaitGroup
 
 	use_wait_group := len(optional_use_wait_group) == 1 && optional_use_wait_group[0]
@@ -55,7 +54,7 @@ func (gameState GameState) broadcast(message Message, optional_use_wait_group ..
 	// }
 
 	for player_index := range gameState.PlayerChannels {
-		fmt.Println("Sending message")
+		// fmt.Println("Sending message")
 		if use_wait_group {
 			gameState.send(player_index, message, &wait_group)
 		} else {
@@ -68,5 +67,5 @@ func (gameState GameState) broadcast(message Message, optional_use_wait_group ..
 		wait_group.Wait()
 	}
 
-	fmt.Println("Finished broadcasting message")
+	// fmt.Println("Finished broadcasting message")
 }

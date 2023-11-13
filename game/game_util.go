@@ -28,3 +28,19 @@ func (gameState *GameState) randomiseCurrentHands() {
 		hand.Randomise()
 	}
 }
+
+func (gameState *GameState) findNextAlivePlayerInclusive() error {
+	startingIndex := gameState.CurrentPlayerIndex
+
+	playerDead := len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
+	for playerDead {
+		gameState.CurrentPlayerIndex += 1
+		gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
+		if gameState.CurrentPlayerIndex == startingIndex {
+			err := errors.New("passed a game that has already been won")
+			return err
+		}
+		playerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
+	}
+	return nil
+}

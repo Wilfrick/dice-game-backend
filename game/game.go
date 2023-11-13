@@ -15,9 +15,16 @@ type GameState struct {
 	GameInProgress       bool
 	AllowableChannelLock int // should live with PlayerChannels, wherever that ends up
 }
+type MoveType string
+
+const (
+	BET   MoveType = "Bet"
+	DUDO  MoveType = "Dudo"
+	CALZA MoveType = "Calza"
+)
 
 type PlayerMove struct {
-	MoveType string // "Bet", "Dudo", "Calza"
+	MoveType MoveType // "Bet", "Dudo", "Calza"
 	Value    Bet
 }
 
@@ -95,6 +102,10 @@ func (gameState *GameState) startNewRound() {
 	gameState.broadcast(Message{"RoundResult", RoundResult{gameState.CurrentPlayerIndex, "next"}})
 }
 
+// Processes new player Move
+// Returns validity of move
+// Will update AllowableChannelLock after running
+// Validates, Broadcasts RoundUpdate, Processes, Updates Index, Broadcasts RoundResult
 func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 	defer func() { gameState.AllowableChannelLock = gameState.CurrentPlayerIndex }()
 	switch playerMove.MoveType {
@@ -115,13 +126,13 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 
 		gameState.broadcast(Message{"RoundUpdate", RoundUpdate{MoveMade: playerMove, PlayerIndex: gameState.CurrentPlayerIndex}})
 
-		gameState.PrevMove = playerMove
+		gameState.PrevMove = playerMove //Why is this here?
 
 		// fmt.Println(playerMove)
 		// fmt.Println(gameState.PrevMove)
 
 		// Update current player
-		_, err := gameState.updatePlayerIndex(playerMove)
+		err := gameState.updatePlayerIndex(BET)
 		if err != nil {
 			fmt.Println(err.Error())
 			return false
@@ -149,15 +160,18 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 		bet_true := gameState.isBetTrue()
 
 		var losing_player_index int
+		var candidate_victor int
+		previousAlivePlayer, err := gameState.PreviousAlivePlayer()
+		if err != nil {
+			fmt.Println(err.Error())
+			return false
+		}
 		if bet_true {
 			losing_player_index = gameState.CurrentPlayerIndex
+			candidate_victor = previousAlivePlayer
 		} else {
-			var err error
-			losing_player_index, err = gameState.PreviousAlivePlayer()
-			if err != nil {
-				fmt.Println(err.Error())
-				return false
-			}
+			losing_player_index = previousAlivePlayer
+			candidate_victor = gameState.CurrentPlayerIndex
 		}
 
 		gameState.broadcast(Message{"RoundResult", RoundResult{losing_player_index, "dec"}})
@@ -170,51 +184,87 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 		if player_died {
 			gameState.broadcast(Message{"RoundResult", RoundResult{losing_player_index, "lose"}})
 			gameState.send(losing_player_index, Message{"GameResult", GameResult{losing_player_index, "lose"}})
+			if gameState.checkPlayerWin(candidate_victor) {
+				gameState.broadcast(Message{"GameResult", GameResult{candidate_victor, "win"}})
+				gameState.GameInProgress = false
+				fmt.Println("A player has won and the game is no longer in progress")
+				return true
+			}
 		}
 		// 2) possible who has now lost ()
-		did_current_player_win, err := gameState.updatePlayerIndex(playerMove)
+		err = gameState.updatePlayerIndex(DUDO, losing_player_index)
 		if err != nil {
 			fmt.Println(err.Error())
 			return false
 		}
-		if did_current_player_win {
-			gameState.broadcast(Message{"GameResult", GameResult{gameState.CurrentPlayerIndex, "win"}})
-			gameState.GameInProgress = false
-			fmt.Println("A player has won and the game is no longer in progress")
-			return true
-			// gameState.send(gameState.CurrentPlayerIndex, Message{"GameResult", GameResult{gameState.CurrentPlayerIndex, "win"}})
-		}
 		gameState.startNewRound()
+	case "Calza":
+		fmt.Println("Made into Case Calza")
+		//Input already valid
+		gameState.broadcast(Message{"RoundUpdate", RoundUpdate{
+			PlayerIndex: gameState.CurrentPlayerIndex,
+			MoveMade:    PlayerMove{MoveType: "Calza"},
+		}})
+		bet_true := gameState.isBetExactlyTrue()
+		// Not sure if the following code deserves a function
+		var losing_player_index int
+		var candidate_victor int
+		previousAlivePlayer, err := gameState.PreviousAlivePlayer()
+		if err != nil {
+			fmt.Println(err.Error())
+			return false
+		}
+		if bet_true {
+			losing_player_index = previousAlivePlayer
+			candidate_victor = gameState.CurrentPlayerIndex
+		} else {
+			losing_player_index = gameState.CurrentPlayerIndex
+			candidate_victor = previousAlivePlayer
+		}
+		gameState.broadcast(Message{"RoundResult", RoundResult{losing_player_index, "dec"}})
+		player_died, err := gameState.removeDice(losing_player_index)
+		if err != nil {
+			fmt.Println(err.Error())
+			return false
+		}
+		if player_died {
+			gameState.broadcast(Message{"RoundResult", RoundResult{losing_player_index, "lose"}})
+			gameState.send(losing_player_index, Message{"GameResult", GameResult{losing_player_index, "lose"}})
+			if gameState.checkPlayerWin(candidate_victor) {
+				gameState.broadcast(Message{"GameResult", GameResult{candidate_victor, "win"}})
+				gameState.GameInProgress = false
+				fmt.Println("A player has won and the game is no longer in progress")
+				return true
+			}
+		}
+	default:
+		return false
 	}
 	gameState.PrevMove = playerMove
 	return true
 }
 
-func (gameState *GameState) updatePlayerIndex(newbet PlayerMove) (bool, error) {
+func (gameState *GameState) updatePlayerIndex(moveType MoveType, optional_player_lose ...int) error {
 	if len(gameState.PlayerHands) == 0 {
 		err := errors.New("can't update a Game with no players")
-		return false, err
+		return err
 	} else if gameState.PlayersAllDead() {
-		return false, errors.New("all players are dead")
+		return errors.New("all players are dead")
 	}
-	startingIndex := gameState.CurrentPlayerIndex
-	gameState.CurrentPlayerIndex += 1
-	gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
-	newPlayerDead := len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
-	for newPlayerDead {
+	if moveType == DUDO || moveType == CALZA {
+		if len(optional_player_lose) != 1 {
+			err := errors.New("a dudo or a calza always causes a player to have their number of dice change")
+			return err
+		} else {
+			gameState.CurrentPlayerIndex = optional_player_lose[0]
+		}
+	} else if moveType == BET {
+		fmt.Println("MoveType BET")
 		gameState.CurrentPlayerIndex += 1
 		gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
-		if gameState.CurrentPlayerIndex == startingIndex {
-			// err := errors.New("looped around to our initial player. all other players dead")
-			// looped around to our initial player. all other players dead
-
-			// This actually is the winning condition
-			// Winner stored as gameState.CurrentPlayerIndex
-			return true, nil
-		}
-		newPlayerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
 	}
-	return false, nil
+	err := gameState.findNextAlivePlayerInclusive()
+	return err
 }
 
 // broadcast message function, to used as: gameState.broadcast(message)
