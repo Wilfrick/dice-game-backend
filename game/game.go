@@ -117,6 +117,7 @@ func (gameState *GameState) startNewRound() {
 // Validates, Broadcasts RoundUpdate, Processes, Updates Index, Broadcasts RoundResult
 func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 	defer func() { gameState.AllowableChannelLock = gameState.CurrentPlayerIndex }()
+	fmt.Printf("CPI %d || ACL %d \n", gameState.CurrentPlayerIndex, gameState.AllowableChannelLock)
 	switch playerMove.MoveType {
 	case BET:
 		return gameState.processPlayerBet(playerMove)
