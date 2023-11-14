@@ -14,7 +14,8 @@ import (
 func processUserMessage(userMessage game.Message, thisChan chan []byte, allChannels *map[chan []byte]int, allGames *map[int]*game.GameState) {
 	gameState := (*allGames)[0]
 	// fmt.Println("Printing gamestate", gameState)
-	gameState.PlayerChannels = maps.Keys(*allChannels) // not very efficient. Should work
+	// not very efficient. Should work
+	fmt.Printf("Message recieved from websocket associated to player index %d \n", slices.Index(gameState.PlayerChannels, thisChan))
 	switch userMessage.TypeDescriptor {
 	case "PlayerMove":
 		fmt.Println("Made it into PlayerMove switch")
@@ -55,6 +56,7 @@ func processUserMessage(userMessage game.Message, thisChan chan []byte, allChann
 		// }
 		// move was valid, broadcast new state
 	case "GameStart":
+		gameState.PlayerChannels = maps.Keys(*allChannels)
 		fmt.Println("Case: GameStart")
 		gameState.StartNewGame()
 		// will need to let players know the result of updating the game state

@@ -89,7 +89,7 @@ func (gameState *GameState) processPlayerDudo() bool {
 
 	// dudo should always be valid, as long as the current player // checked earlier
 	gameState.broadcastPlayerMove(PlayerMove{MoveType: DUDO})
-
+	gameState.revealHands()
 	// calculate the result of the call:
 	// 1) who loses a dice (always happens)
 	losing_player_index, candidate_victor, err := gameState.DudoIdentifyLosersWinners()
@@ -111,6 +111,7 @@ func (gameState *GameState) processPlayerDudo() bool {
 		}
 	}
 	gameState.updatePlayerIndexFinalBet(losing_player_index, candidate_victor)
+
 	// err = gameState.updatePlayerIndex(DUDO, losing_player_index) // probably needs to take candidate_victor as well
 	// if err != nil {
 	// 	fmt.Println(err.Error())
@@ -124,6 +125,7 @@ func (gameState *GameState) processPlayerCalza() bool {
 	fmt.Println("Made into Case Calza")
 	//Input already valid
 	gameState.broadcastPlayerMove(PlayerMove{MoveType: CALZA})
+	gameState.revealHands()
 	bet_true := gameState.isBetExactlyTrue()
 	// Not sure if the following code deserves a function
 	if bet_true {
@@ -159,6 +161,7 @@ func (gameState *GameState) processPlayerCalza() bool {
 		}
 	}
 	gameState.updatePlayerIndexFinalBet(dice_total_changing_player_index, other_player_index)
+
 	// err = gameState.updatePlayerIndex(DUDO, losing_player_index) // probably needs to take candidate_victor as well
 	// if err != nil {
 	// 	fmt.Println(err.Error())
