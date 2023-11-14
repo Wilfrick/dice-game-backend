@@ -97,13 +97,15 @@ func Test_processPlayerMoveDudoFalse(t *testing.T) {
 	}()
 	gs.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{5, 2}}
 	gs.CurrentPlayerIndex = 1
-	playerMove := PlayerMove{MoveType: DUDO} // False, so P1 loses a dice
-	validity := gs.ProcessPlayerMove(playerMove)
+	playerMove := PlayerMove{MoveType: DUDO}     // False, so P1 loses a dice
+	validity := gs.ProcessPlayerMove(playerMove) // not a big fan of 'validity', would rather 'move could be made' or similar
 	if !validity {
 		t.Fail()
 	}
 	t.Log(gs.CurrentPlayerIndex)
-	util.Assert(t, gs.CurrentPlayerIndex == 1)
+
+	util.Assert(t, gs.CurrentPlayerIndex == 1) // ✓
+	util.Assert(t, len(gs.PlayerHands[gs.CurrentPlayerIndex]) == 1)
 
 }
 
@@ -112,7 +114,7 @@ func Test_processPlayerMoveDudoTrue(t *testing.T) {
 	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 3}), PlayerHand([]int{1, 1})}
 	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 2))
 	go func() {
-		for {
+		for { // could use select to sink all messages without any possibility of blocking
 			<-gs.PlayerChannels[0]
 			<-gs.PlayerChannels[1]
 		}
@@ -122,11 +124,10 @@ func Test_processPlayerMoveDudoTrue(t *testing.T) {
 	playerMove := PlayerMove{MoveType: "Dudo"} // True only 4 2's
 	validity := gs.ProcessPlayerMove(playerMove)
 	if !validity {
-		t.Log(validity)
-		t.Fail()
+		t.Error(validity)
 	}
 	t.Log(gs.CurrentPlayerIndex)
-	util.Assert(t, gs.CurrentPlayerIndex == 0)
+	util.Assert(t, gs.CurrentPlayerIndex == 0) // ✓
 
 }
 
@@ -156,10 +157,9 @@ func Test_processPlayerMoveDudoFalseKilling(t *testing.T) {
 	playerMove := PlayerMove{MoveType: "Dudo"} // False 3 2's, so P1 loses and dies
 	validity := gs.ProcessPlayerMove(playerMove)
 	if !validity {
-		t.Log(validity)
-		t.Fail()
+		t.Error(validity)
 	}
 	t.Log(gs.CurrentPlayerIndex)
 	t.Log(gs.PlayerHands)
-	util.Assert(t, gs.CurrentPlayerIndex == 2) //If a player dies, continue round the circle
+	util.Assert(t, gs.CurrentPlayerIndex == 0) //If a player dies, the next player is the other player involved in the call
 }

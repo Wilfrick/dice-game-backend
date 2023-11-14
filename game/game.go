@@ -17,7 +17,7 @@ type GameState struct {
 }
 type MoveType string
 
-const (
+const ( // ✓
 	BET   MoveType = "Bet"
 	DUDO  MoveType = "Dudo"
 	CALZA MoveType = "Calza"
