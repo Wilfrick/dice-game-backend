@@ -24,8 +24,8 @@ func Test_processPlayerMoveCalzaTrue(t *testing.T) {
 		t.Fail()
 	}
 	t.Logf("CPI: %d", gs.CurrentPlayerIndex)
-	util.Assert(t, gs.CurrentPlayerIndex == 0)
-
+	util.Assert(t, gs.CurrentPlayerIndex == 1)  // Do we update player correctly when CALZA
+	util.Assert(t, len(gs.PlayerHands[1]) == 3) // Do we update dice correctly when CALZA
 }
 
 func Test_processPlayerMoveCalzaFalse(t *testing.T) {
@@ -48,5 +48,6 @@ func Test_processPlayerMoveCalzaFalse(t *testing.T) {
 	}
 	t.Log(gs.CurrentPlayerIndex)
 	util.Assert(t, gs.CurrentPlayerIndex == 1)
+	util.Assert(t, len(gs.PlayerHands[1]) == 1)
 
 }

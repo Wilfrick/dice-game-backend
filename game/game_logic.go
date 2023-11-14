@@ -89,9 +89,5 @@ func (gameState GameState) PreviousAlivePlayer() (int, error) {
 
 func (gameState GameState) checkPlayerWin(candidate_victor int) bool {
 	alivePlayers := gameState.alivePlayerIndices()
-	if len(alivePlayers) == 1 && alivePlayers[0] == candidate_victor {
-		return true
-	} else {
-		return false
-	}
+	return len(alivePlayers) == 1 && alivePlayers[0] == candidate_victor
 }

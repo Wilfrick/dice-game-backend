@@ -80,21 +80,7 @@ func Test_processPlayerMoveDudoFalse(t *testing.T) {
 	var gs GameState
 	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 2}), PlayerHand([]int{1, 1}), PlayerHand([]int{4, 4})}
 	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
-	go func() {
-		for {
-			<-gs.PlayerChannels[0]
-		}
-	}()
-	go func() {
-		for {
-			<-gs.PlayerChannels[1]
-		}
-	}()
-	go func() {
-		for {
-			<-gs.PlayerChannels[2]
-		}
-	}()
+	util.ChanSink(gs.PlayerChannels)
 	gs.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{5, 2}}
 	gs.CurrentPlayerIndex = 1
 	playerMove := PlayerMove{MoveType: DUDO}     // False, so P1 loses a dice
