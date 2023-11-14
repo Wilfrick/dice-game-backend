@@ -86,3 +86,8 @@ func (gameState GameState) PreviousAlivePlayer() (int, error) {
 	}
 	return alive_player_indices[current_player_relative_position-1], nil
 }
+
+func (gameState GameState) checkPlayerWin(candidate_victor int) bool {
+	alivePlayers := gameState.alivePlayerIndices()
+	return len(alivePlayers) == 1 && alivePlayers[0] == candidate_victor
+}

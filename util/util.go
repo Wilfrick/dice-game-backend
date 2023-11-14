@@ -59,3 +59,13 @@ func InitialiseChans[P any](channels []chan P) []chan P {
 // }
 
 func Len[P []any](p P) int { return len(p) } // doesn't seem to work always
+
+func ChanSink[P any](channels []chan P) {
+	for _, c := range channels {
+		go func(c chan P) {
+			for {
+				<-c
+			}
+		}(c)
+	}
+}

@@ -41,3 +41,26 @@ func Test_RemoveDiceKilling(t *testing.T) {
 	// could also assert the player hands after this.
 	util.Assert(t, len(gameState.PlayerHands[0]) == 3 && len(gameState.PlayerHands[2]) == 3)
 }
+
+func Test_nextPlayerAliveAlivePlayers(t *testing.T) {
+	var gameState GameState
+	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{5}), PlayerHand([]int{4, 5, 6})}
+	gameState.CurrentPlayerIndex = 0
+	err := gameState.findNextAlivePlayerInclusive()
+	if err != nil {
+		t.Fail()
+	}
+	t.Log(gameState.CurrentPlayerIndex)
+	util.Assert(t, gameState.CurrentPlayerIndex == 0)
+}
+func Test_nextPlayerAliveDeadPlayer(t *testing.T) {
+	var gameState GameState
+	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{}), PlayerHand([]int{5}), PlayerHand([]int{4, 5, 6})}
+	gameState.CurrentPlayerIndex = 0
+	err := gameState.findNextAlivePlayerInclusive()
+	if err != nil {
+		t.Fail()
+	}
+	t.Log(gameState.CurrentPlayerIndex)
+	util.Assert(t, gameState.CurrentPlayerIndex == 1)
+}
