@@ -17,9 +17,14 @@ func (gameState *GameState) removeDice(player_index int) (bool, error) {
 	}
 	//Trim this players hands
 	gameState.PlayerHands[player_index] = gameState.PlayerHands[player_index][:len(gameState.PlayerHands[player_index])-1]
-
 	// returns true if the player that lost a dice is now dead
 	return len(gameState.PlayerHands[player_index]) == 0, nil
+}
+
+func (gameState *GameState) addDice(player_index int) {
+	if len(gameState.PlayerHands[player_index]) < 5 {
+		gameState.PlayerHands[player_index] = append(gameState.PlayerHands[player_index], 0)
+	}
 }
 
 func (gameState *GameState) randomiseCurrentHands() {

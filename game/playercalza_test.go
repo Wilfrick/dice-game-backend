@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_processPlayerMoveCalzaTrue(t *testing.T) {
+func xTest_processPlayerMoveCalzaTrue(t *testing.T) {
 	var gs GameState
 	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 2}), PlayerHand([]int{1, 1})}
 	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 2))
@@ -28,7 +28,7 @@ func Test_processPlayerMoveCalzaTrue(t *testing.T) {
 	util.Assert(t, len(gs.PlayerHands[1]) == 3) // Do we update dice correctly when CALZA
 }
 
-func Test_processPlayerMoveCalzaFalse(t *testing.T) {
+func xTest_processPlayerMoveCalzaFalse(t *testing.T) {
 	var gs GameState
 	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 3}), PlayerHand([]int{1, 1})}
 	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 2))

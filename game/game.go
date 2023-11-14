@@ -27,10 +27,19 @@ type PlayerMove struct {
 	MoveType MoveType // "Bet", "Dudo", "Calza"
 	Value    Bet
 }
+type Result string
+
+const (
+	DEC  Result = "dec"
+	INC  Result = "inc"
+	LOSE Result = "lose"
+	WIN  Result = "win"
+	NEXT Result = "next"
+)
 
 type RoundResult struct { // the result of the round
 	PlayerIndex int
-	Result      string // "dec", "inc", "lose", "win", "next"
+	Result      Result // "dec", "inc", "lose", "win", "next"
 }
 
 type RoundUpdate struct { // a player made a specific move
@@ -110,15 +119,14 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 	defer func() { gameState.AllowableChannelLock = gameState.CurrentPlayerIndex }()
 	switch playerMove.MoveType {
 	case BET:
-		gameState.processPlayerBet(playerMove)
+		return gameState.processPlayerBet(playerMove)
 	case DUDO:
-		gameState.processPlayerDudo()
+		return gameState.processPlayerDudo()
 	case CALZA:
-		gameState.processPlayerCalza()
+		return gameState.processPlayerCalza()
 	default:
 		return false
 	}
-	return true
 }
 
 func (gameState *GameState) updatePlayerIndex(moveType MoveType, optional_player_lose ...int) error {
