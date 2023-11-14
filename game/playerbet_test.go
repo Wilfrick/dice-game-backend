@@ -118,10 +118,23 @@ func Test_updatePlayerIndexDudoTrue(t *testing.T) {
 
 func Test_updatePlayerIndexDudoFalse(t *testing.T) {
 	var gs GameState
-	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 3}), PlayerHand([]int{1}), PlayerHand([]int{5})}
+	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 3}), PlayerHand([]int{1, 2}), PlayerHand([]int{5})}
 	gs.CurrentPlayerIndex = 1
 	losing_player_index := 1
 	err := gs.updatePlayerIndex(DUDO, losing_player_index)
+	if err != nil {
+		t.Fail()
+	}
+	t.Log(gs.CurrentPlayerIndex)
+	util.Assert(t, gs.CurrentPlayerIndex == 1)
+}
+
+func Test_updatePlayerIndexCalza(t *testing.T) {
+	var gs GameState
+	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 3}), PlayerHand([]int{1, 2}), PlayerHand([]int{5})}
+	gs.CurrentPlayerIndex = 1
+	losing_player_index := 1
+	err := gs.updatePlayerIndex(CALZA, losing_player_index)
 	if err != nil {
 		t.Fail()
 	}
