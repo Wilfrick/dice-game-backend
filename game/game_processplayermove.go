@@ -6,7 +6,7 @@ import (
 
 func (gameState GameState) checkNewBetValid(newBet Bet) bool {
 	betValid := newBet.isGreaterThan(gameState.PrevMove.Value)
-	betValid = true // ONLY For testing, not for production
+	// betValid = true // ONLY For testing, not for production
 	return betValid
 }
 
@@ -124,6 +124,11 @@ func (gameState *GameState) processPlayerDudo() bool {
 func (gameState *GameState) processPlayerCalza() bool {
 	fmt.Println("Made into Case Calza")
 	//Input already valid
+	numAlivePlayers := len(gameState.alivePlayerIndices())
+	if numAlivePlayers <= 2 {
+		// We do not allow Calza with only 2 live players
+		return false
+	}
 	gameState.broadcastPlayerMove(PlayerMove{MoveType: CALZA})
 	gameState.revealHands()
 	bet_true := gameState.isBetExactlyTrue()

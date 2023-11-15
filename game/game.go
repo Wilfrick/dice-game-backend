@@ -104,6 +104,7 @@ func (gameState *GameState) startNewRound() {
 	fmt.Println("Called StartNewRound")
 	gameState.randomiseCurrentHands()
 	gameState.distributeHands()
+	gameState.PrevMove = PlayerMove{} // 'zero out' the previous move
 
 	InitialPlayerHandLengths := PlayerHandLengthsUpdate{util.Map(func(x PlayerHand) int { return len(x) }, gameState.PlayerHands)}
 	gameState.broadcast(Message{TypeDescriptor: "PlayerHandLengthsUpdate", Contents: InitialPlayerHandLengths})
