@@ -12,14 +12,16 @@ func (gameState GameState) send(player_index int, msg Message, wait_groups ...*s
 
 	// fmt.Println("Called send")
 	fmt.Println("logging out message", msg, player_index)
-	go func(gs GameState, message Message) {
+	encodedMessage := createEncodedMessage(msg)
+	go func(gs GameState, encodedMsg []byte) { // VERY IMPORTANT. Must not modify gs in any way
 		if len(wait_groups) == 1 {
 			defer wait_groups[0].Done()
 		}
-		encodedMessage := createEncodedMessage(message)
+
 		fmt.Println("inside go", string(encodedMessage), player_index) // lots of output here
-		gs.PlayerChannels[player_index] <- createEncodedMessage(message)
-	}(gameState, msg)
+		gs.PlayerChannels[player_index] <- encodedMsg
+		// gs.PlayerChannels[player_index] <- createEncodedMessage(msg Message)
+	}(gameState, encodedMessage)
 }
 
 func (gameState GameState) distributeHands() {
