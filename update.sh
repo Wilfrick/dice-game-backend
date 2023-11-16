@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # stop server
 systemctl --user disable dice-game-backend
 
