@@ -11,13 +11,13 @@ func (gameState GameState) send(player_index int, msg Message, wait_groups ...*s
 	}
 
 	// fmt.Println("Called send")
-	go func(gameState GameState, msg Message) {
+	go func() {
 		if len(wait_groups) == 1 {
 			defer wait_groups[0].Done()
 		}
 
 		gameState.PlayerChannels[player_index] <- createEncodedMessage(msg)
-	}(gameState, msg)
+	}()
 }
 
 func (gameState GameState) distributeHands() {
@@ -40,6 +40,7 @@ func (gameState GameState) revealHands() {
 	playerHandContentsMessage := Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}}
 	fmt.Println(playerHandContentsMessage)
 	gameState.broadcast(playerHandContentsMessage)
+	fmt.Println(playerHandContentsMessage)
 }
 
 func (gameState GameState) broadcast(message Message, optional_use_wait_group ...bool) {
