@@ -86,6 +86,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan [
 	for {
 		select {
 		case b := <-thisChan:
+			// fmt.Println("This channel just got", string(b))
 			_, err := ws.Write(b)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -146,7 +147,7 @@ func main() {
 
 	fmt.Println("Server running")
 
-	err := http.ListenAndServe("localhost:12345", nil)
+	err := http.ListenAndServe(":32156", nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
