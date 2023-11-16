@@ -3,6 +3,7 @@ package game
 import (
 	"HigherLevelPerudoServer/util"
 	"bytes"
+	"fmt"
 	"sync"
 	"testing"
 )
@@ -113,7 +114,6 @@ func Test_distributeSingularHand(t *testing.T) {
 	util.Assert(t, bytes.Equal(result, true_result))
 }
 
-
 func Test_broadcastSimple(t *testing.T) {
 	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 1))}
 	msg := Message{TypeDescriptor: "Bananas"}
@@ -209,3 +209,23 @@ func Test_revealHandsSomeDeadPlayers(t *testing.T) {
 	util.Assert(t, bytes.Equal(res4, true_result))
 }
 
+func Test_revealHandsRaceCondition(t *testing.T) {
+	var gameState GameState
+	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{4, 4, 5, 1, 1})}
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 1))
+	msg := Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{[]PlayerHand{PlayerHand([]int{4, 4, 5, 1, 1})}}}
+	var output []byte
+
+	gameState.revealHands() //Go routine here
+
+	gameState.randomiseCurrentHands()
+	gameState.randomiseCurrentHands()
+	// wait_group.Wait()
+	// fmt.Println("Waited")
+	output = <-gameState.PlayerChannels[0]
+	fmt.Println(string(output))
+	t.Log(string(output))
+	t.Log(string(createEncodedMessage(msg)))
+	util.Assert(t, bytes.Equal(output, createEncodedMessage(msg)))
+
+}
