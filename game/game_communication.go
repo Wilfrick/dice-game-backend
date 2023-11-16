@@ -11,11 +11,12 @@ func (gameState GameState) send(player_index int, msg Message, wait_groups ...*s
 	}
 
 	// fmt.Println("Called send")
+	fmt.Println("logging out message", msg)
 	go func(msg Message) {
 		if len(wait_groups) == 1 {
 			defer wait_groups[0].Done()
 		}
-		fmt.Println(msg) // lots of output here
+		fmt.Println("inside go", msg) // lots of output here
 		gameState.PlayerChannels[player_index] <- createEncodedMessage(msg)
 	}(msg)
 }
