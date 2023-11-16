@@ -146,7 +146,7 @@ func main() {
 
 	fmt.Println("Server running")
 
-	err := http.ListenAndServe("localhost:12345", nil)
+	err := http.ListenAndServe(":32156", nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
