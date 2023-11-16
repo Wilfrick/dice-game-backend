@@ -38,6 +38,7 @@ func (gameState GameState) distributeHands() {
 
 func (gameState GameState) revealHands() {
 	playerHandContentsMessage := Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}}
+	fmt.Println(playerHandContentsMessage)
 	gameState.broadcast(playerHandContentsMessage)
 }
 
