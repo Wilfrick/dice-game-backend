@@ -2,7 +2,7 @@
 systemctl --user disable dice-game-backend
 
 git pull
-go build -o main
+/home/aw808/go_installs/go1.21.4/bin/go build -o main
 
 
 # restart server
