@@ -15,7 +15,7 @@ func (gameState GameState) send(player_index int, msg Message, wait_groups ...*s
 		if len(wait_groups) == 1 {
 			defer wait_groups[0].Done()
 		}
-
+		fmt.Println(msg) // lots of output here
 		gameState.PlayerChannels[player_index] <- createEncodedMessage(msg)
 	}()
 }
