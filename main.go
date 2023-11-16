@@ -86,6 +86,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, allChans *map[chan [
 	for {
 		select {
 		case b := <-thisChan:
+			fmt.Println("This channel just got", string(b))
 			_, err := ws.Write(b)
 			if err != nil {
 				fmt.Println(err.Error())
