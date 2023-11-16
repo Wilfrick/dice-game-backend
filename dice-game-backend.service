@@ -1,0 +1,10 @@
+[Unit]
+Description=Backend dice-game webserver
+ConditionHost=sinkhole
+
+[Install]
+WantedBy=default.target
+
+[Service]
+ExecStart=/home/aw808/dice-game-backend/run.sh
+Restart=on-failure
