@@ -1,7 +1,9 @@
 package main
 
 import (
+	"HigherLevelPerudoServer/game"
 	"HigherLevelPerudoServer/message_handlers"
+	"HigherLevelPerudoServer/message_handlers/player_management_handlers"
 	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
 	"encoding/json"
@@ -70,8 +72,9 @@ func main() {
 	// connectionChannels := make(map[chan []byte]int)
 	channelLocations := message_handlers.ChannelLocations{}
 	activeGames := message_handlers.MessageHandlers{}
+	activeGames[&game.GameState{}] = struct{}{}
 	// activeGames["some_hash"] = &game.GameState{}
-	globalUnassignedPlayersHandler := message_handlers.UnassignedPlayerHandler{}
+	globalUnassignedPlayersHandler := player_management_handlers.UnassignedPlayerHandler{}
 
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
 		thisChan := make(chan []byte)

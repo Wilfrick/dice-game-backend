@@ -216,3 +216,8 @@ func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thi
 	}
 
 }
+
+func (gameState *GameState) AddChannel(thisChan chan []byte, channelLocations *message_handlers.ChannelLocations) {
+	gameState.PlayerChannels = append(gameState.PlayerChannels, thisChan)
+	(*channelLocations)[thisChan] = gameState
+}
