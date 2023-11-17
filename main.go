@@ -2,6 +2,7 @@ package main
 
 import (
 	"HigherLevelPerudoServer/game"
+	"HigherLevelPerudoServer/util"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -144,10 +145,17 @@ func main() {
 	// 	fmt.Println(e.Error())
 	// }
 	// fmt.Println(encodedPlayerHand)
-
+	path := "config.json"
+	config, err := util.ReadConfigFile(path)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	// fmt.Println(config)
+	address := fmt.Sprintf("%s:%d", config.WebsocketHost, config.WebsocketPort)
 	fmt.Println("Server running")
 
-	err := http.ListenAndServe(":32156", nil)
+	err = http.ListenAndServe(address, nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
