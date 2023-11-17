@@ -1,9 +1,15 @@
 package game
 
 import (
+	"HigherLevelPerudoServer/message_handlers"
+	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
+
+	"golang.org/x/exp/maps"
 )
 
 type GameState struct {
@@ -15,6 +21,9 @@ type GameState struct {
 	GameInProgress       bool
 	AllowableChannelLock int // should live with PlayerChannels, wherever that ends up
 }
+
+type GamesMap map[string]*GameState
+
 type MoveType string
 
 const ( // ✓
@@ -107,9 +116,9 @@ func (gameState *GameState) startNewRound() {
 	gameState.PrevMove = PlayerMove{} // 'zero out' the previous move
 
 	InitialPlayerHandLengths := PlayerHandLengthsUpdate{util.Map(func(x PlayerHand) int { return len(x) }, gameState.PlayerHands)}
-	gameState.broadcast(Message{TypeDescriptor: "PlayerHandLengthsUpdate", Contents: InitialPlayerHandLengths})
+	gameState.broadcast(messages.Message{TypeDescriptor: "PlayerHandLengthsUpdate", Contents: InitialPlayerHandLengths})
 	// gameState.CurrentPlayerIndex = 0 //EVIL SIN CRIME GUILT FILTH UNWASHED
-	gameState.broadcast(Message{"RoundResult", RoundResult{gameState.CurrentPlayerIndex, "next"}})
+	gameState.broadcast(messages.Message{"RoundResult", RoundResult{gameState.CurrentPlayerIndex, "next"}})
 }
 
 // Processes new player Move
@@ -154,3 +163,56 @@ func (gameState *GameState) updatePlayerIndex(moveType MoveType, optional_player
 }
 
 // broadcast message function, to used as: gameState.broadcast(message)
+
+func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thisChan chan []byte, channelLocations *message_handlers.ChannelLocations, allGames *message_handlers.MessageHandlers) {
+
+	// fmt.Println("Printing gamestate", gameState)
+	// not very efficient. Should work
+	fmt.Printf("Message recieved from websocket associated to player index %d \n", slices.Index(gameState.PlayerChannels, thisChan))
+	switch userMessage.TypeDescriptor {
+	case "PlayerMove":
+		fmt.Println("Made it into PlayerMove switch")
+		// If PlayerMove need to ensure that userMessage.Contents is of type PlayerMove
+
+		// could check here to make sure that this message is coming from the current player
+		// To do as such, we need a pairing from thisChan to playerIDs
+		// Then check equality against gameState.CurrentPlayerIndex
+		// thisChanIndex := slices.Index[[]chan []byte, chan []byte](gameState.PlayerChannels,thisChan)
+
+		thisChanIndex := slices.Index(gameState.PlayerChannels, thisChan)
+		if thisChanIndex != gameState.AllowableChannelLock {
+			thisChan <- messages.PackMessage("NOT YOUR TURN", nil)
+			return
+		}
+
+		var playerMove PlayerMove
+		buff, err := json.Marshal(userMessage.Contents)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		err = json.Unmarshal(buff, &playerMove)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		fmt.Println("Calling gamestate.processPlayerMove")
+		couldProcessMove := gameState.ProcessPlayerMove(playerMove)
+		if !couldProcessMove {
+			thisChan <- messages.PackMessage("Could not process player move", nil)
+			return
+		}
+		fmt.Println("Finished gamestate.processPlayerMove")
+		// if !valid {
+		// 	gameState.PlayerChannels[gameState.CurrentPlayerIndex] <- packMessage("Invalid Bet", "Invalid Bet selection. Please select a valid move")
+		// 	return
+		// }
+		// move was valid, broadcast new state
+	case "GameStart":
+		gameState.PlayerChannels = maps.Keys(*channelLocations)
+		fmt.Println("Case: GameStart")
+		gameState.StartNewGame()
+		// will need to let players know the result of updating the game state
+	}
+
+}

@@ -1,18 +1,19 @@
 package game
 
 import (
+	"HigherLevelPerudoServer/messages"
 	"fmt"
 	"sync"
 )
 
-func (gameState GameState) send(player_index int, msg Message, wait_groups ...*sync.WaitGroup) {
+func (gameState GameState) send(player_index int, msg messages.Message, wait_groups ...*sync.WaitGroup) {
 	if len(wait_groups) == 1 {
 		wait_groups[0].Add(1)
 	}
 
 	// fmt.Println("Called send")
 	// fmt.Println("logging out message", msg, player_index)
-	encodedMessage := createEncodedMessage(msg)
+	encodedMessage := messages.CreateEncodedMessage(msg)
 	go func(gs GameState, encodedMsg []byte) { // VERY IMPORTANT. Must not modify gs in any way
 		if len(wait_groups) == 1 {
 			defer wait_groups[0].Done()
@@ -29,7 +30,7 @@ func (gameState GameState) distributeHands() {
 	var distribute_hands_wait_group sync.WaitGroup
 	for playerHandIndex, playerHand := range gameState.PlayerHands {
 		gameState.send(playerHandIndex,
-			Message{"SinglePlayerHandContents",
+			messages.Message{"SinglePlayerHandContents",
 				SinglePlayerHandContents{PlayerHand: playerHand,
 					PlayerIndex: playerHandIndex}},
 			&distribute_hands_wait_group)
@@ -41,13 +42,13 @@ func (gameState GameState) distributeHands() {
 }
 
 func (gameState GameState) revealHands() {
-	playerHandContentsMessage := Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}}
+	playerHandContentsMessage := messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}}
 	// fmt.Println(playerHandContentsMessage)
 	gameState.broadcast(playerHandContentsMessage)
 	// fmt.Println(playerHandContentsMessage)
 }
 
-func (gameState GameState) broadcast(message Message, optional_use_wait_group ...bool) {
+func (gameState GameState) broadcast(message messages.Message, optional_use_wait_group ...bool) {
 	// fmt.Println("Trying to broadcast message")
 	var wait_group sync.WaitGroup
 

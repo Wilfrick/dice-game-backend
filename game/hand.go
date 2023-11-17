@@ -1,6 +1,7 @@
 package game
 
 import (
+	"HigherLevelPerudoServer/messages"
 	"math/rand"
 )
 
@@ -19,6 +20,6 @@ func (playerHand *PlayerHand) Randomise() {
 }
 
 func (playerHand PlayerHand) AssembleHandMessage() []byte {
-	encodedMessage := PackMessage("PlayerHand", playerHand)
+	encodedMessage := messages.PackMessage("PlayerHand", playerHand)
 	return encodedMessage
 }
