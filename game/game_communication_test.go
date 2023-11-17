@@ -91,9 +91,9 @@ func Test_distributeHands(t *testing.T) {
 
 	// assert that the results are as expected
 
-	true_result1 := messages.CreateEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
-	true_result2 := messages.CreateEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[1], 1}})
-	true_result3 := messages.CreateEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[2], 2}})
+	true_result1 := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
+	true_result2 := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[1], 1}})
+	true_result3 := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[2], 2}})
 
 	util.Assert(t, bytes.Equal(result1, true_result1))
 	util.Assert(t, bytes.Equal(result2, true_result2))
@@ -111,7 +111,7 @@ func Test_distributeSingularHand(t *testing.T) {
 	go gameState.distributeHands()
 
 	result := <-gameState.PlayerChannels[0]
-	true_result := messages.CreateEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
 	util.Assert(t, bytes.Equal(result, true_result))
 }
 
@@ -178,7 +178,7 @@ func Test_revealHandsBasic(t *testing.T) {
 	go gameState.revealHands()
 
 	result := <-gameState.PlayerChannels[0]
-	true_result := messages.CreateEncodedMessage(Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
 	util.Assert(t, bytes.Equal(result, true_result))
 }
 
@@ -190,7 +190,7 @@ func Test_revealHandsTwoPlayers(t *testing.T) {
 
 	res1, res2 := <-gameState.PlayerChannels[0], <-gameState.PlayerChannels[1]
 
-	true_result := messages.CreateEncodedMessage(Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
 	util.Assert(t, bytes.Equal(res1, true_result))
 	util.Assert(t, bytes.Equal(res2, true_result))
 }
@@ -203,7 +203,7 @@ func Test_revealHandsSomeDeadPlayers(t *testing.T) {
 
 	res1, res2, res3, res4 := <-gameState.PlayerChannels[0], <-gameState.PlayerChannels[1], <-gameState.PlayerChannels[2], <-gameState.PlayerChannels[3]
 
-	true_result := messages.CreateEncodedMessage(Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
 	util.Assert(t, bytes.Equal(res1, true_result))
 	util.Assert(t, bytes.Equal(res2, true_result))
 	util.Assert(t, bytes.Equal(res3, true_result))
