@@ -8,11 +8,11 @@ import (
 
 type Config struct { //Examples
 	WebsocketHost string // "" / "localhost"
-	WebsocketPort string // "32156" / "12345"
+	WebsocketPort int    // 32156 / 12345
 	WebsocketUrl  string // "localhost" / "aw808.user.srcf.net"
 }
 
-func readConfigFile(path string) (Config, error) {
+func ReadConfigFile(path string) (Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return Config{}, err

@@ -10,7 +10,7 @@ import (
 func Test_callReadConfigFileNullPathError(t *testing.T) {
 	var configStruct Config
 	var path string
-	configStruct, err := readConfigFile(path)
+	configStruct, err := ReadConfigFile(path)
 	if err == nil {
 		t.Fail()
 	}
@@ -36,13 +36,13 @@ func Test_ReadConfigFileExample(t *testing.T) {
 	}
 	defer tidy()
 
-	exampleConfig := "{\"WebsocketHost\": \"\", \"WebsocketPort\": \"12345\", \"WebsocketUrl\": \"localhost\"}"
+	exampleConfig := "{\"WebsocketHost\": \"\", \"WebsocketPort\": 12345, \"WebsocketUrl\": \"localhost\"}"
 	file.WriteString(exampleConfig)
-	config, err := readConfigFile(path)
+	config, err := ReadConfigFile(path)
 	if err != nil {
 		t.Fail()
 	}
-	trueConfig := Config{WebsocketHost: "", WebsocketPort: "12345", WebsocketUrl: "localhost"}
+	trueConfig := Config{WebsocketHost: "", WebsocketPort: 12345, WebsocketUrl: "localhost"}
 	Assert(t, trueConfig == config)
 
 }
