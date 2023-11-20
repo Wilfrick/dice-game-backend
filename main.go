@@ -78,17 +78,16 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 func main() {
 	// connectionChannels := make(map[chan []byte]int)
 	channelLocations := message_handlers.ChannelLocations{}
-	activeGames := message_handlers.MessageHandlers{}
-	activeGames[&game.GameState{}] = struct{}{}
+	activeHandlers := message_handlers.MessageHandlers{}
+	activeHandlers[&game.GameState{}] = struct{}{}
 	// activeGames["some_hash"] = &game.GameState{}
 	globalUnassignedPlayersHandler := player_management_handlers.UnassignedPlayerHandler{}
-
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
 		thisChan := make(chan []byte)
 		globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)
 		channelLocations[thisChan] = &globalUnassignedPlayersHandler
 
-		manageWsConn(ws, thisChan, &channelLocations, &activeGames, &globalUnassignedPlayersHandler)
+		manageWsConn(ws, thisChan, &channelLocations, &activeHandlers, &globalUnassignedPlayersHandler)
 	}))
 
 	// // I think we can write code down here.
@@ -113,5 +112,4 @@ func main() {
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
-
 }

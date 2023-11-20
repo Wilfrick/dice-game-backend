@@ -225,3 +225,13 @@ func (gameState *GameState) AddChannel(thisChan chan []byte, channelLocations *m
 	gameState.PlayerChannels = append(gameState.PlayerChannels, thisChan)
 	(*channelLocations)[thisChan] = gameState
 }
+
+func (gameState *GameState) MoveChannel(thisChan chan []byte, newLocation message_handlers.MessageHandler, channelLocations *message_handlers.ChannelLocations, allHandlers *message_handlers.MessageHandlers) {
+	// thisChanIndex := slices.Index(gameState.PlayerChannels, thisChan)
+	// gameState.PlayerChannels = slices.Delete(gameState.PlayerChannels, thisChanIndex, thisChanIndex) // might need a +1 to make a valid slice
+	// if len(gameState.PlayerChannels) == 0 && message_handlers.MessageHandler(gameState) != *newLocation {
+	// 	delete((*allHandlers), gameState)
+	// }
+	// (*newLocation).AddChannel(thisChan, channelLocations)
+	message_handlers.MoveChannelLogic(&gameState.PlayerChannels, thisChan, newLocation, channelLocations, allHandlers)
+}
