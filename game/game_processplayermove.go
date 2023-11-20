@@ -66,10 +66,10 @@ func (gameState GameState) DudoIdentifyLosersWinners() (int, int, error) {
 // ProcessPlayerDeath returns outcome of whether candidate_victor has won
 func (gameState GameState) processPlayerDeath(losing_player_index, candidate_victor int) bool {
 	fmt.Println("Called processPlayerDeath")
-	gameState.broadcast(messages.Message{"RoundResult", RoundResult{losing_player_index, "lose"}})
-	gameState.send(losing_player_index, messages.Message{"GameResult", GameResult{losing_player_index, "lose"}})
+	gameState.broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{losing_player_index, "lose"}})
+	gameState.send(losing_player_index, messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{losing_player_index, "lose"}})
 	if gameState.checkPlayerWin(candidate_victor) {
-		gameState.broadcast(messages.Message{"GameResult", GameResult{candidate_victor, "win"}})
+		gameState.broadcast(messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{candidate_victor, "win"}})
 		gameState.GameInProgress = false
 		fmt.Println("A player has won and the game is no longer in progress")
 		return true

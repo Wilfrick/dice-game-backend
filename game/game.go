@@ -118,7 +118,7 @@ func (gameState *GameState) startNewRound() {
 	InitialPlayerHandLengths := PlayerHandLengthsUpdate{util.Map(func(x PlayerHand) int { return len(x) }, gameState.PlayerHands)}
 	gameState.broadcast(messages.Message{TypeDescriptor: "PlayerHandLengthsUpdate", Contents: InitialPlayerHandLengths})
 	// gameState.CurrentPlayerIndex = 0 //EVIL SIN CRIME GUILT FILTH UNWASHED
-	gameState.broadcast(messages.Message{"RoundResult", RoundResult{gameState.CurrentPlayerIndex, "next"}})
+	gameState.broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{gameState.CurrentPlayerIndex, "next"}})
 }
 
 // Processes new player Move
@@ -186,6 +186,10 @@ func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thi
 		}
 
 		var playerMove PlayerMove
+		// the below marshal and Unmarshal could be removed with a good understanding of the type of PlayerMove being sent
+		// Below may work but may also be a breaking change
+		// playerMove = PlayerMove{MoveType = userMessage.Contents.MoveType, Bet userMessage.Contents.Bet}
+
 		buff, err := json.Marshal(userMessage.Contents)
 		if err != nil {
 			fmt.Println(err.Error())

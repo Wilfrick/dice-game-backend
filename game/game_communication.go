@@ -30,8 +30,8 @@ func (gameState GameState) distributeHands() {
 	var distribute_hands_wait_group sync.WaitGroup
 	for playerHandIndex, playerHand := range gameState.PlayerHands {
 		gameState.send(playerHandIndex,
-			messages.Message{"SinglePlayerHandContents",
-				SinglePlayerHandContents{PlayerHand: playerHand,
+			messages.Message{TypeDescriptor: "SinglePlayerHandContents",
+				Contents: SinglePlayerHandContents{PlayerHand: playerHand,
 					PlayerIndex: playerHandIndex}},
 			&distribute_hands_wait_group)
 	}
