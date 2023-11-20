@@ -80,8 +80,9 @@ func main() {
 	channelLocations := message_handlers.ChannelLocations{}
 	activeHandlers := message_handlers.MessageHandlers{}
 	activeHandlers[&game.GameState{}] = struct{}{}
-	// activeGames["some_hash"] = &game.GameState{}
+
 	globalUnassignedPlayersHandler := player_management_handlers.UnassignedPlayerHandler{}
+	activeHandlers[&globalUnassignedPlayersHandler] = struct{}{}
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
 		thisChan := make(chan []byte)
 		globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)

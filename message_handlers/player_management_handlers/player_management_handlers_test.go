@@ -3,6 +3,7 @@ package player_management_handlers
 import (
 	"HigherLevelPerudoServer/game"
 	"HigherLevelPerudoServer/message_handlers"
+	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
 	"testing"
 )
@@ -55,4 +56,14 @@ func Test_lobbyToGameLocation(t *testing.T) {
 	util.Assert(t, len(lobbyChan.LobbyPlayerChannels) == 0)
 	util.Assert(t, len(gameState.PlayerChannels) == 1)
 	util.Assert(t, gameState.PlayerChannels[0] == playerChan)
+}
+
+func Test_createLobby(t *testing.T) {
+	playerChan := make(chan []byte)
+	unPH := UnassignedPlayerHandler{UnassignedPlayers: []chan []byte{playerChan}}
+	msg := messages.Message{TypeDescriptor: "Create Lobby"}
+	channelLocations := message_handlers.ChannelLocations{}
+	allHandlers := message_handlers.MessageHandlers{}
+	unPH.ProcessUserMessage(msg, playerChan, &channelLocations, &allHandlers)
+	util.Assert(t, len(allHandlers) == 2)
 }
