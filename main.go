@@ -13,7 +13,8 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *message_handlers.ChannelLocations, allGames *message_handlers.MessageHandlers) {
+func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *message_handlers.ChannelLocations, allGames *message_handlers.MessageHandlers,
+	globalUnassignedPlayersHandler *player_management_handlers.UnassignedPlayerHandler) {
 
 	externalData := make(chan []byte)
 	go func() {
@@ -53,7 +54,13 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 				fmt.Println(e.Error())
 				continue
 			}
-			go ((*channelLocations)[thisChan]).ProcessUserMessage(message, thisChan, channelLocations, allGames)
+			if _, ok := ((*channelLocations)[thisChan]); !ok {
+				fmt.Println("The current channel does not have an associated location!")
+				// Should be impossible
+				(*channelLocations)[thisChan] = globalUnassignedPlayersHandler
+			}
+			handler := ((*channelLocations)[thisChan])
+			go (handler).ProcessUserMessage(message, thisChan, channelLocations, allGames)
 
 			// old but useful code, echo + broadcast, will be removed in the future
 			// ws.Write(b)
@@ -81,7 +88,7 @@ func main() {
 		globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)
 		channelLocations[thisChan] = &globalUnassignedPlayersHandler
 
-		manageWsConn(ws, thisChan, &channelLocations, &activeGames)
+		manageWsConn(ws, thisChan, &channelLocations, &activeGames, &globalUnassignedPlayersHandler)
 	}))
 
 	// // I think we can write code down here.
