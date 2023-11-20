@@ -20,6 +20,11 @@ type GameState struct {
 	PrevMove             PlayerMove
 	GameInProgress       bool
 	AllowableChannelLock int // should live with PlayerChannels, wherever that ends up
+	channelLocations     *message_handlers.ChannelLocations
+}
+
+func (gameState *GameState) SetChannelLocations(channelLocations *message_handlers.ChannelLocations) {
+	gameState.channelLocations = channelLocations
 }
 
 type GamesMap map[string]*GameState
@@ -164,7 +169,7 @@ func (gameState *GameState) updatePlayerIndex(moveType MoveType, optional_player
 
 // broadcast message function, to used as: gameState.broadcast(message)
 
-func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thisChan chan []byte, channelLocations *message_handlers.ChannelLocations, allGames *message_handlers.MessageHandlers) {
+func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thisChan chan []byte) {
 
 	// fmt.Println("Printing gamestate", gameState)
 	// not very efficient. Should work
@@ -213,7 +218,7 @@ func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thi
 		// }
 		// move was valid, broadcast new state
 	case "GameStart":
-		gameState.PlayerChannels = maps.Keys(*channelLocations)
+		gameState.PlayerChannels = maps.Keys(*gameState.channelLocations)
 		fmt.Println("Case: GameStart")
 		gameState.StartNewGame()
 		// will need to let players know the result of updating the game state
@@ -221,17 +226,17 @@ func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thi
 
 }
 
-func (gameState *GameState) AddChannel(thisChan chan []byte, channelLocations *message_handlers.ChannelLocations) {
+func (gameState *GameState) AddChannel(thisChan chan []byte) {
 	gameState.PlayerChannels = append(gameState.PlayerChannels, thisChan)
-	(*channelLocations)[thisChan] = gameState
+	(*gameState.channelLocations)[thisChan] = gameState
 }
 
-func (gameState *GameState) MoveChannel(thisChan chan []byte, newLocation message_handlers.MessageHandler, channelLocations *message_handlers.ChannelLocations, allHandlers *message_handlers.MessageHandlers) {
+func (gameState *GameState) MoveChannel(thisChan chan []byte, newLocation message_handlers.MessageHandler) {
 	// thisChanIndex := slices.Index(gameState.PlayerChannels, thisChan)
 	// gameState.PlayerChannels = slices.Delete(gameState.PlayerChannels, thisChanIndex, thisChanIndex) // might need a +1 to make a valid slice
 	// if len(gameState.PlayerChannels) == 0 && message_handlers.MessageHandler(gameState) != *newLocation {
 	// 	delete((*allHandlers), gameState)
 	// }
 	// (*newLocation).AddChannel(thisChan, channelLocations)
-	message_handlers.MoveChannelLogic(&gameState.PlayerChannels, thisChan, newLocation, channelLocations, allHandlers)
+	message_handlers.MoveChannelLogic(&gameState.PlayerChannels, thisChan, newLocation, gameState.channelLocations)
 }
