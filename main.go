@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *message_handlers.ChannelLocations, allGames *message_handlers.MessageHandlers,
+func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *message_handlers.ChannelLocations,
 	globalUnassignedPlayersHandler *player_management_handlers.UnassignedPlayerHandler) {
 
 	externalData := make(chan []byte)
@@ -60,7 +60,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 				(*channelLocations)[thisChan] = globalUnassignedPlayersHandler
 			}
 			handler := ((*channelLocations)[thisChan])
-			go (handler).ProcessUserMessage(message, thisChan, channelLocations, allGames)
+			go (handler).ProcessUserMessage(message, thisChan)
 
 			// old but useful code, echo + broadcast, will be removed in the future
 			// ws.Write(b)
@@ -82,13 +82,14 @@ func main() {
 	activeHandlers[&game.GameState{}] = struct{}{}
 
 	globalUnassignedPlayersHandler := player_management_handlers.UnassignedPlayerHandler{}
-	activeHandlers[&globalUnassignedPlayersHandler] = struct{}{}
+	globalUnassignedPlayersHandler.SetChannelLocations(&channelLocations)
+	// activeHandlers[&globalUnassignedPlayersHandler] = struct{}{}
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
 		thisChan := make(chan []byte)
 		globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)
 		channelLocations[thisChan] = &globalUnassignedPlayersHandler
 
-		manageWsConn(ws, thisChan, &channelLocations, &activeHandlers, &globalUnassignedPlayersHandler)
+		manageWsConn(ws, thisChan, &channelLocations, &globalUnassignedPlayersHandler)
 	}))
 
 	// // I think we can write code down here.
