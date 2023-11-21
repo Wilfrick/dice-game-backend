@@ -122,7 +122,7 @@ func Test_joiningLobbyWithHash(t *testing.T) {
 	util.ChanSink([]chan []byte{playerChan})
 	lobbyMap := make(map[string]*LobbyHandler)
 	lobbyMap["alex"] = &lobby
-	unPH.lobbyMap = &lobbyMap
+	unPH.LobbyMap = &lobbyMap
 	msg := messages.Message{TypeDescriptor: "Join Lobby", Contents: struct{ LobbyID string }{LobbyID: "alex"}}
 	channelLocations := message_handlers.ChannelLocations{}
 	unPH.SetChannelLocations(&channelLocations)

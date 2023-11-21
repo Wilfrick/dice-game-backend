@@ -121,9 +121,9 @@ func (gameState *GameState) startNewRound() {
 	gameState.PrevMove = PlayerMove{} // 'zero out' the previous move
 
 	InitialPlayerHandLengths := PlayerHandLengthsUpdate{util.Map(func(x PlayerHand) int { return len(x) }, gameState.PlayerHands)}
-	gameState.broadcast(messages.Message{TypeDescriptor: "PlayerHandLengthsUpdate", Contents: InitialPlayerHandLengths})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "PlayerHandLengthsUpdate", Contents: InitialPlayerHandLengths})
 	// gameState.CurrentPlayerIndex = 0 //EVIL SIN CRIME GUILT FILTH UNWASHED
-	gameState.broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{gameState.CurrentPlayerIndex, "next"}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{gameState.CurrentPlayerIndex, "next"}})
 }
 
 // Processes new player Move

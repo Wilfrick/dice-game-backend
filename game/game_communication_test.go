@@ -118,14 +118,14 @@ func Test_distributeSingularHand(t *testing.T) {
 func Test_broadcastSimple(t *testing.T) {
 	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 1))}
 	msg := messages.Message{TypeDescriptor: "Bananas"}
-	go gs.broadcast(msg)
+	go gs.Broadcast(msg)
 	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], messages.CreateEncodedMessage(msg)))
 }
 
 func Test_broadcastTwoPlayers(t *testing.T) {
 	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 2))}
 	msg := messages.Message{TypeDescriptor: "Bananas"}
-	go gs.broadcast(msg)
+	go gs.Broadcast(msg)
 	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], messages.CreateEncodedMessage(msg)))
 	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[1], messages.CreateEncodedMessage(msg)))
 }
@@ -133,7 +133,7 @@ func Test_broadcastWithWaitgroupSimple(t *testing.T) {
 	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 1))}
 	msg := messages.Message{TypeDescriptor: "Bananas"}
 	use_waitgroup := true
-	go gs.broadcast(msg, use_waitgroup)
+	go gs.Broadcast(msg, use_waitgroup)
 	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], messages.CreateEncodedMessage(msg)))
 }
 

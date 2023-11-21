@@ -12,19 +12,19 @@ func (gameState GameState) checkNewBetValid(newBet Bet) bool {
 }
 
 func (gameState GameState) broadcastPlayerMove(playerMove PlayerMove) {
-	gameState.broadcast(messages.Message{"RoundUpdate", RoundUpdate{MoveMade: playerMove, PlayerIndex: gameState.CurrentPlayerIndex}})
+	gameState.Broadcast(messages.Message{"RoundUpdate", RoundUpdate{MoveMade: playerMove, PlayerIndex: gameState.CurrentPlayerIndex}})
 }
 
 func (gameState GameState) broadcastNextPlayer() {
-	gameState.broadcast(messages.Message{"RoundResult", RoundResult{PlayerIndex: gameState.CurrentPlayerIndex, Result: "next"}})
+	gameState.Broadcast(messages.Message{"RoundResult", RoundResult{PlayerIndex: gameState.CurrentPlayerIndex, Result: "next"}})
 }
 
 func (gameState GameState) broadcastDiceDec(playerIndex int) {
-	gameState.broadcast(messages.Message{"RoundResult", RoundResult{PlayerIndex: playerIndex, Result: DEC}})
+	gameState.Broadcast(messages.Message{"RoundResult", RoundResult{PlayerIndex: playerIndex, Result: DEC}})
 }
 
 func (gameState GameState) broadcastDiceInc(playerIndex int) {
-	gameState.broadcast(messages.Message{"RoundResult", RoundResult{PlayerIndex: playerIndex, Result: INC}})
+	gameState.Broadcast(messages.Message{"RoundResult", RoundResult{PlayerIndex: playerIndex, Result: INC}})
 }
 
 func (gameState *GameState) processPlayerBet(playerMove PlayerMove) bool {
@@ -66,10 +66,10 @@ func (gameState GameState) DudoIdentifyLosersWinners() (int, int, error) {
 // ProcessPlayerDeath returns outcome of whether candidate_victor has won
 func (gameState GameState) processPlayerDeath(losing_player_index, candidate_victor int) bool {
 	fmt.Println("Called processPlayerDeath")
-	gameState.broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{losing_player_index, "lose"}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{losing_player_index, "lose"}})
 	gameState.send(losing_player_index, messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{losing_player_index, "lose"}})
 	if gameState.checkPlayerWin(candidate_victor) {
-		gameState.broadcast(messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{candidate_victor, "win"}})
+		gameState.Broadcast(messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{candidate_victor, "win"}})
 		gameState.GameInProgress = false
 		fmt.Println("A player has won and the game is no longer in progress")
 		return true

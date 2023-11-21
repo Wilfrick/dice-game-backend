@@ -24,6 +24,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 			n, err := ws.Read(buff)
 			if err != nil {
 				fmt.Println(err.Error())
+				(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
 				delete(*channelLocations, thisChan)
 				// should also remove thisChan from allChans, so allChans should probably be a map rather than a slice
 				// er.Error() == 'EOF' represents the connection closing
@@ -40,6 +41,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 			_, err := ws.Write(b)
 			if err != nil {
 				fmt.Println(err.Error())
+				(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
 				delete(*channelLocations, thisChan)
 				continue
 			}
@@ -80,8 +82,9 @@ func main() {
 	channelLocations := message_handlers.ChannelLocations{}
 	activeHandlers := message_handlers.MessageHandlers{}
 	activeHandlers[&game.GameState{}] = struct{}{}
-
+	globalLobbyMap := make(map[string]*player_management_handlers.LobbyHandler)
 	globalUnassignedPlayersHandler := player_management_handlers.UnassignedPlayerHandler{}
+	globalUnassignedPlayersHandler.LobbyMap = &globalLobbyMap
 	globalUnassignedPlayersHandler.SetChannelLocations(&channelLocations)
 	// activeHandlers[&globalUnassignedPlayersHandler] = struct{}{}
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
