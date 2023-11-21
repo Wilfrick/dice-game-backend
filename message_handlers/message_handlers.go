@@ -66,7 +66,7 @@ func sendBytes(thisChan chan []byte, bytesContents []byte, optional_wait_group .
 		wait_group := (optional_wait_group[0])
 		wait_group.Add(1)
 	}
-
+	// fmt.Println("going sending", string(bytesContents))
 	go func(thisChan chan []byte, encodedMsg []byte) {
 		thisChan <- encodedMsg
 		if len(optional_wait_group) == 1 {

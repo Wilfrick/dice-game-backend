@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"slices"
 )
 
 type UnassignedPlayerHandler struct {
@@ -38,16 +39,20 @@ func (unPH *UnassignedPlayerHandler) ProcessUserMessage(msg messages.Message, th
 		// do quickplay
 	case "Create Lobby":
 		// Generate a random hash
-		hash_chars := "abcdefghiklmnopqrtsuvwxyz"
-		_ = hash_chars[rand.Intn(len(hash_chars))]
-		hash := "abcdefghiklmnopqrtsuvwxyz"
+		hash_chars := "abcdefghijklmnopqrtsuvwxyz"
+		_ = hash_chars[rand.Intn(len(hash_chars))] // https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go has some good content
+		hash := []byte{}
+		for i := 0; i <= 10; i++ {
+			hash = append(hash, hash_chars[rand.Intn(len(hash_chars))])
+		}
+		lobbyID := string(hash)
 		// Check for collision till new // very low prob that this is the same as another hash, so we all good
 		// Create lobby with hash
-		newLobby := LobbyHandler{LobbyID: hash}
+		newLobby := LobbyHandler{LobbyID: lobbyID, GlobalUnassignedPlayerHandler: unPH}
 		newLobby.SetChannelLocations(unPH.channelLocations)
-		(*unPH.LobbyMap)[hash] = &newLobby // this possibly overwrites a previous lobby with the same hash, but hopefully hashes will never be the same
+		(*unPH.LobbyMap)[lobbyID] = &newLobby // this possibly overwrites a previous lobby with the same hash, but hopefully hashes will never be the same
 		// (*allHandlers)[&newLobby] = struct{}{} // removed as we are moving away from allHandlers
-		lobbyJoinResponse := LobbyJoinResponse{userReadableResponse: "Successfully joined lobby with given ID", LobbyID: hash, NumPlayers: 1}
+		lobbyJoinResponse := LobbyJoinResponse{userReadableResponse: "Successfully joined lobby with given ID", LobbyID: lobbyID, NumPlayers: 1}
 		msg = messages.Message{TypeDescriptor: "Lobby Join Accepted", Contents: lobbyJoinResponse}
 		thisChan <- messages.CreateEncodedMessage(msg)
 		unPH.MoveChannel(thisChan, &newLobby)
@@ -110,9 +115,10 @@ func (unPH UnassignedPlayerHandler) Broadcast(message messages.Message, optional
 }
 
 type LobbyHandler struct {
-	LobbyPlayerChannels []chan []byte
-	LobbyID             string
-	channelLocations    *message_handlers.ChannelLocations
+	LobbyPlayerChannels           []chan []byte
+	LobbyID                       string
+	channelLocations              *message_handlers.ChannelLocations
+	GlobalUnassignedPlayerHandler *UnassignedPlayerHandler
 }
 
 func (lobbyHandler *LobbyHandler) ProcessUserMessage(msg messages.Message, thisChan chan []byte) {
@@ -128,19 +134,39 @@ func (lobbyHandler *LobbyHandler) ProcessUserMessage(msg messages.Message, thisC
 		// create a new game (including setting channellocations)
 		gameState := game.GameState{}
 		gameState.SetChannelLocations(lobbyHandler.channelLocations)
-
-		// add the players that are currently in this lobby to the game
-		for _, playerChan := range lobbyHandler.LobbyPlayerChannels {
-			lobbyHandler.MoveChannel(playerChan, &gameState)
+		// numPlayers := len(lobbyHandler.LobbyPlayerChannels)
+		// // add the players that are currently in this lobby to the game
+		// for _, playerChan := range lobbyHandler.LobbyPlayerChannels {
+		// 	lobbyHandler.MoveChannel(playerChan, &gameState)
+		// }
+		for remaining := len(lobbyHandler.LobbyPlayerChannels); remaining > 0; remaining = len(lobbyHandler.LobbyPlayerChannels) {
+			lobbyHandler.MoveChannel(lobbyHandler.LobbyPlayerChannels[remaining-1], &gameState)
 		}
-
 		// give the game the correct ID
 		gameState.GameID = lobbyHandler.LobbyID
 
 		// update the channelLocations for these channels
-
+		delete(*lobbyHandler.GlobalUnassignedPlayerHandler.LobbyMap, lobbyHandler.LobbyID)
 		// done
+		msg := messages.Message{TypeDescriptor: "Game Started", Contents: struct{ GameID string }{GameID: gameState.GameID}}
+		gameState.Broadcast(msg)
 
+		fmt.Println("Case: GameStart")
+		gameState.StartNewGame()
+	case "Leave Lobby":
+		fmt.Println("Player trying to leave lobby")
+		whichPlayer := slices.Index(lobbyHandler.LobbyPlayerChannels, thisChan)
+
+		lobbyHandler.MoveChannel(thisChan, lobbyHandler.GlobalUnassignedPlayerHandler)
+		// Not real code
+		// Tell everyone who left
+		playerLeftMessage := messages.Message{TypeDescriptor: "Player Left Lobby", Contents: struct {
+			PlayerIndex    int
+			NewPlayerCount int
+		}{PlayerIndex: whichPlayer, NewPlayerCount: len(lobbyHandler.LobbyPlayerChannels)}}
+		// fmt.Println(lobbyHandler)
+		lobbyHandler.Broadcast(playerLeftMessage)
+		// successfulLeaveMessage := Message{msg.TypeDescriptor: ""}
 	}
 }
 
@@ -157,6 +183,9 @@ func (lobbyHandler *LobbyHandler) MoveChannel(thisChan chan []byte, newLocation 
 	// }
 	// (*newLocation).AddChannel(thisChan, channelLocations)
 	message_handlers.MoveChannelLogic(&lobbyHandler.LobbyPlayerChannels, thisChan, newLocation, lobbyHandler.channelLocations)
+	if len(lobbyHandler.LobbyPlayerChannels) == 0 {
+		delete((*lobbyHandler.GlobalUnassignedPlayerHandler.LobbyMap), lobbyHandler.LobbyID)
+	}
 }
 
 func (lobbyHandler *LobbyHandler) SetChannelLocations(channelLocations *message_handlers.ChannelLocations) {

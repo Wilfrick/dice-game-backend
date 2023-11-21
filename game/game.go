@@ -8,8 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-
-	"golang.org/x/exp/maps"
 )
 
 type GameState struct {
@@ -104,6 +102,9 @@ func (gameState *GameState) StartNewGame() {
 	// Broadcast PlayerHandsLengthsUpdate
 	// Choose a first player
 	// Broadcast first player?
+
+	// gameState.PlayerChannels = maps.Keys(*gameState.channelLocations) // PlayerChannels were already set from the lobby
+
 	gameState.PlayerHands = make([]PlayerHand, len(gameState.PlayerChannels))
 	gameState.GameInProgress = true
 	for i := range gameState.PlayerHands {
@@ -217,10 +218,7 @@ func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thi
 		// 	return
 		// }
 		// move was valid, broadcast new state
-	case "GameStart":
-		gameState.PlayerChannels = maps.Keys(*gameState.channelLocations)
-		fmt.Println("Case: GameStart")
-		gameState.StartNewGame()
+
 		// will need to let players know the result of updating the game state
 	}
 
