@@ -1,4 +1,4 @@
-package game
+package messages
 
 import "encoding/json"
 
@@ -10,11 +10,11 @@ type Message struct {
 
 func PackMessage(TypeDescriptor string, Contents interface{}) []byte {
 	message := Message{TypeDescriptor, Contents}
-	encodedMessage := createEncodedMessage(message)
+	encodedMessage := CreateEncodedMessage(message)
 	return encodedMessage
 }
 
-func createEncodedMessage(message Message) []byte {
+func CreateEncodedMessage(message Message) []byte {
 	encodedMessage, _ := json.Marshal(message)
 	return encodedMessage
 }

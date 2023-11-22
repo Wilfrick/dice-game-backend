@@ -1,29 +1,31 @@
 package game
 
 import (
+	"HigherLevelPerudoServer/messages"
 	"fmt"
 )
 
 func (gameState GameState) checkNewBetValid(newBet Bet) bool {
-	betValid := newBet.isGreaterThan(gameState.PrevMove.Value)
+	betIncreasing := newBet.isGreaterThan(gameState.PrevMove.Value)
+	betRejectedForOnesOnFirstTurn := gameState.PrevMove.MoveType != BET && newBet.FaceVal == 1
 	// betValid = true // ONLY For testing, not for production
-	return betValid
+	return betIncreasing && !betRejectedForOnesOnFirstTurn
 }
 
 func (gameState GameState) broadcastPlayerMove(playerMove PlayerMove) {
-	gameState.broadcast(Message{"RoundUpdate", RoundUpdate{MoveMade: playerMove, PlayerIndex: gameState.CurrentPlayerIndex}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundUpdate", Contents: RoundUpdate{MoveMade: playerMove, PlayerIndex: gameState.CurrentPlayerIndex}})
 }
 
 func (gameState GameState) broadcastNextPlayer() {
-	gameState.broadcast(Message{"RoundResult", RoundResult{PlayerIndex: gameState.CurrentPlayerIndex, Result: "next"}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{PlayerIndex: gameState.CurrentPlayerIndex, Result: "next"}})
 }
 
 func (gameState GameState) broadcastDiceDec(playerIndex int) {
-	gameState.broadcast(Message{"RoundResult", RoundResult{PlayerIndex: playerIndex, Result: DEC}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{PlayerIndex: playerIndex, Result: DEC}})
 }
 
 func (gameState GameState) broadcastDiceInc(playerIndex int) {
-	gameState.broadcast(Message{"RoundResult", RoundResult{PlayerIndex: playerIndex, Result: INC}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{PlayerIndex: playerIndex, Result: INC}})
 }
 
 func (gameState *GameState) processPlayerBet(playerMove PlayerMove) bool {
@@ -32,6 +34,7 @@ func (gameState *GameState) processPlayerBet(playerMove PlayerMove) bool {
 	if !betValid {
 		return false
 	}
+
 	gameState.broadcastPlayerMove(playerMove)
 
 	gameState.PrevMove = playerMove
@@ -65,10 +68,10 @@ func (gameState GameState) DudoIdentifyLosersWinners() (int, int, error) {
 // ProcessPlayerDeath returns outcome of whether candidate_victor has won
 func (gameState GameState) processPlayerDeath(losing_player_index, candidate_victor int) bool {
 	fmt.Println("Called processPlayerDeath")
-	gameState.broadcast(Message{"RoundResult", RoundResult{losing_player_index, "lose"}})
-	gameState.send(losing_player_index, Message{"GameResult", GameResult{losing_player_index, "lose"}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{losing_player_index, "lose"}})
+	gameState.send(losing_player_index, messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{losing_player_index, "lose"}})
 	if gameState.checkPlayerWin(candidate_victor) {
-		gameState.broadcast(Message{"GameResult", GameResult{candidate_victor, "win"}})
+		gameState.Broadcast(messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{candidate_victor, "win"}})
 		gameState.GameInProgress = false
 		fmt.Println("A player has won and the game is no longer in progress")
 		return true
@@ -86,6 +89,10 @@ func (gameState *GameState) updatePlayerIndexFinalBet(dice_change_player_index, 
 
 func (gameState *GameState) processPlayerDudo() bool {
 	fmt.Println("in ProcessPlayerMove, made into case 'Dudo' ")
+
+	if gameState.PrevMove.MoveType != BET { // could condition on PrevMove.Value as well if we wanted
+		return false
+	}
 
 	// dudo should always be valid, as long as the current player // checked earlier
 	gameState.broadcastPlayerMove(PlayerMove{MoveType: DUDO})
@@ -124,6 +131,10 @@ func (gameState *GameState) processPlayerDudo() bool {
 func (gameState *GameState) processPlayerCalza() bool {
 	fmt.Println("Made into Case Calza")
 	//Input already valid
+	if gameState.PrevMove.MoveType != BET {
+		return false
+	}
+	// Need to check that this is not the first move of a game
 	numAlivePlayers := len(gameState.alivePlayerIndices())
 	if numAlivePlayers <= 2 {
 		// We do not allow Calza with only 2 live players
@@ -189,17 +200,17 @@ func (gameState *GameState) processPlayerCalza() bool {
 	// 	dice_total_changing_player_index = gameState.CurrentPlayerIndex
 	// 	candidate_victor = previousAlivePlayer
 	// }
-	// gameState.broadcast(Message{"RoundResult", RoundResult{dice_total_changing_player_index, "dec"}})
+	// gameState.broadcast(messages.Message{"RoundResult", RoundResult{dice_total_changing_player_index, "dec"}})
 	// player_died, err := gameState.removeDice(dice_total_changing_player_index)
 	// if err != nil {
 	// 	fmt.Println(err.Error())
 	// 	return false
 	// }
 	// if player_died {
-	// 	gameState.broadcast(Message{"RoundResult", RoundResult{dice_total_changing_player_index, "lose"}})
-	// 	gameState.send(dice_total_changing_player_index, Message{"GameResult", GameResult{dice_total_changing_player_index, "lose"}})
+	// 	gameState.broadcast(messages.Message{"RoundResult", RoundResult{dice_total_changing_player_index, "lose"}})
+	// 	gameState.send(dice_total_changing_player_index, messages.Message{"GameResult", GameResult{dice_total_changing_player_index, "lose"}})
 	// 	if gameState.checkPlayerWin(candidate_victor) {
-	// 		gameState.broadcast(Message{"GameResult", GameResult{candidate_victor, "win"}})
+	// 		gameState.broadcast(messages.Message{"GameResult", GameResult{candidate_victor, "win"}})
 	// 		gameState.GameInProgress = false
 	// 		fmt.Println("A player has won and the game is no longer in progress")
 	// 		return true

@@ -129,3 +129,75 @@ func Test_DudoIdentifyLosersWinnersWrappers(t *testing.T) {
 	util.Assert(t, loser == 2)
 	util.Assert(t, winner == 0)
 }
+
+func Test_CalzaShouldntBePossibleOnFirstMoveOfRoundNoPrevMove(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1, 1, 1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3))}
+	util.ChanSink(gs.PlayerChannels)
+
+	res := gs.processPlayerCalza()
+	util.Assert(t, res == false)
+}
+
+func Test_CalzaShouldntBePossibleOnFirstMoveOfRoundDudoPrevMove(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1, 1, 1}, {3, 3, 3}, {4, 4, 4}}, PrevMove: PlayerMove{MoveType: DUDO}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3))}
+	util.ChanSink(gs.PlayerChannels)
+
+	res := gs.processPlayerCalza()
+	util.Assert(t, res == false)
+}
+
+func Test_CalzaShouldntBePossibleOnFirstMoveOfRoundCalzaPrevMove(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1, 1, 1}, {3, 3, 3}, {4, 4, 4}}, PrevMove: PlayerMove{MoveType: CALZA}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3))}
+	util.ChanSink(gs.PlayerChannels)
+
+	res := gs.processPlayerCalza()
+	util.Assert(t, res == false)
+}
+
+func Test_DudoShouldntBePossibleOnFirstMoveOfRoundNoPrevMove(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1, 1, 1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3))}
+	util.ChanSink(gs.PlayerChannels)
+
+	res := gs.processPlayerDudo()
+	util.Assert(t, res == false)
+}
+
+func Test_DudoShouldntBePossibleOnFirstMoveOfRoundDudoPrevMove(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1, 1, 1}, {3, 3, 3}, {4, 4, 4}}, PrevMove: PlayerMove{MoveType: DUDO}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3))}
+	util.ChanSink(gs.PlayerChannels)
+
+	res := gs.processPlayerDudo()
+	util.Assert(t, res == false)
+}
+
+func Test_DudoShouldntBePossibleOnFirstMoveOfRoundCalzaPrevMove(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1, 1, 1}, {3, 3, 3}, {4, 4, 4}}, PrevMove: PlayerMove{MoveType: CALZA}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3))}
+	util.ChanSink(gs.PlayerChannels)
+
+	res := gs.processPlayerDudo()
+	util.Assert(t, res == false)
+}
+
+func Test_rejectOnesOnTheFirstMove(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1, 1, 1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3))}
+	util.ChanSink(gs.PlayerChannels)
+	bet := Bet{FaceVal: 1, NumDice: 1}
+	res := gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == false)
+}
+func Test_rejectOnesOnTheFirstMoveAfterADudo(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1, 1, 1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3))}
+	gs.PrevMove = PlayerMove{MoveType: DUDO}
+	util.ChanSink(gs.PlayerChannels)
+	bet := Bet{FaceVal: 1, NumDice: 1}
+	res := gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == false)
+}
+func Test_rejectOnesOnTheFirstMoveAfterACalza(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1, 1, 1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3))}
+	gs.PrevMove = PlayerMove{MoveType: CALZA}
+	util.ChanSink(gs.PlayerChannels)
+	bet := Bet{FaceVal: 1, NumDice: 1}
+	res := gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == false)
+}

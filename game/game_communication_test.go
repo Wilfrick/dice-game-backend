@@ -1,6 +1,7 @@
 package game
 
 import (
+	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
 	"bytes"
 	"fmt"
@@ -24,10 +25,10 @@ func Test_sendWithoutWaitGroup(t *testing.T) {
 	gameState.PlayerChannels = make([]chan []byte, 1)
 	gameState.PlayerChannels[0] = make(chan []byte)
 	PLAYER_INDEX := 0
-	msg := Message{TypeDescriptor: "Bananas"}
+	msg := messages.Message{TypeDescriptor: "Bananas"}
 	gameState.send(PLAYER_INDEX, msg)
 	recieve := <-gameState.PlayerChannels[0]
-	encodedMsg := createEncodedMessage(msg)
+	encodedMsg := messages.CreateEncodedMessage(msg)
 	util.Assert(t, bytes.Equal(recieve, encodedMsg))
 }
 func Test_sendWithWaitGroupSimple(t *testing.T) {
@@ -36,11 +37,11 @@ func Test_sendWithWaitGroupSimple(t *testing.T) {
 	gameState.PlayerChannels[0] = make(chan []byte)
 	PLAYER_INDEX := 0
 	var wait_group sync.WaitGroup
-	msg := Message{TypeDescriptor: "Bananas"}
+	msg := messages.Message{TypeDescriptor: "Bananas"}
 	gameState.send(PLAYER_INDEX, msg, &wait_group)
 	recieve := <-gameState.PlayerChannels[0]
 	wait_group.Wait()
-	encodedMsg := createEncodedMessage(msg)
+	encodedMsg := messages.CreateEncodedMessage(msg)
 	util.Assert(t, bytes.Equal(recieve, encodedMsg))
 }
 
@@ -48,7 +49,7 @@ func Test_sendWithWaitGroupMultiParty(t *testing.T) {
 	var gameState GameState
 	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	var wait_group sync.WaitGroup
-	msg := Message{TypeDescriptor: "Bananas"}
+	msg := messages.Message{TypeDescriptor: "Bananas"}
 	gameState.send(0, msg, &wait_group)
 	gameState.send(1, msg, &wait_group)
 	gameState.send(2, msg, &wait_group)
@@ -69,7 +70,7 @@ func Test_sendWithWaitGroupMultiParty(t *testing.T) {
 	if <-done == 1 {
 		t.Fail()
 	}
-	encodedMsg := createEncodedMessage(msg)
+	encodedMsg := messages.CreateEncodedMessage(msg)
 	util.Assert(t, bytes.Equal(recieve1, encodedMsg))
 }
 
@@ -90,9 +91,9 @@ func Test_distributeHands(t *testing.T) {
 
 	// assert that the results are as expected
 
-	true_result1 := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
-	true_result2 := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[1], 1}})
-	true_result3 := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[2], 2}})
+	true_result1 := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
+	true_result2 := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[1], 1}})
+	true_result3 := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[2], 2}})
 
 	util.Assert(t, bytes.Equal(result1, true_result1))
 	util.Assert(t, bytes.Equal(result2, true_result2))
@@ -110,30 +111,30 @@ func Test_distributeSingularHand(t *testing.T) {
 	go gameState.distributeHands()
 
 	result := <-gameState.PlayerChannels[0]
-	true_result := createEncodedMessage(Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "SinglePlayerHandContents", Contents: SinglePlayerHandContents{gameState.PlayerHands[0], 0}})
 	util.Assert(t, bytes.Equal(result, true_result))
 }
 
 func Test_broadcastSimple(t *testing.T) {
 	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 1))}
-	msg := Message{TypeDescriptor: "Bananas"}
-	go gs.broadcast(msg)
-	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], createEncodedMessage(msg)))
+	msg := messages.Message{TypeDescriptor: "Bananas"}
+	go gs.Broadcast(msg)
+	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], messages.CreateEncodedMessage(msg)))
 }
 
 func Test_broadcastTwoPlayers(t *testing.T) {
 	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 2))}
-	msg := Message{TypeDescriptor: "Bananas"}
-	go gs.broadcast(msg)
-	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], createEncodedMessage(msg)))
-	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[1], createEncodedMessage(msg)))
+	msg := messages.Message{TypeDescriptor: "Bananas"}
+	go gs.Broadcast(msg)
+	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], messages.CreateEncodedMessage(msg)))
+	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[1], messages.CreateEncodedMessage(msg)))
 }
 func Test_broadcastWithWaitgroupSimple(t *testing.T) {
 	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 1))}
-	msg := Message{TypeDescriptor: "Bananas"}
+	msg := messages.Message{TypeDescriptor: "Bananas"}
 	use_waitgroup := true
-	go gs.broadcast(msg, use_waitgroup)
-	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], createEncodedMessage(msg)))
+	go gs.Broadcast(msg, use_waitgroup)
+	util.Assert(t, bytes.Equal(<-gs.PlayerChannels[0], messages.CreateEncodedMessage(msg)))
 }
 
 // THE BELOW TEST IS UNTESTED
@@ -142,8 +143,8 @@ func Test_broadcastWithWaitgroupSimple(t *testing.T) {
 
 // func Test_broadcastWithWaitgroupTwoPlayers(t *testing.T) {
 // 	gs := GameState{PlayerChannels: util.InitialiseChans(make([]chan []byte, 2))}
-// 	msg := Message{TypeDescriptor: "Bananas"}
-// 	msg2 := Message{TypeDescriptor: "Oranges"}
+// 	msg := messages.Message{TypeDescriptor: "Bananas"}
+// 	msg2 := messages.Message{TypeDescriptor: "Oranges"}
 // 	counter := 0
 // 	go func(gs GameState, counter *int) {
 // 		*counter += 1
@@ -156,7 +157,7 @@ func Test_broadcastWithWaitgroupSimple(t *testing.T) {
 // 	go func(gs GameState, t *testing.T) {
 // 		<-gs.PlayerChannels[0]
 // 		res := <-gs.PlayerChannels[1]
-// 		if bytes.Equal(res, createEncodedMessage(msg)) {
+// 		if bytes.Equal(res,  messages.CreateEncodedMessage(msg)) {
 // 			t.Error("could extract values without waiting for all parties")
 // 		}
 // 		// fail?
@@ -177,7 +178,7 @@ func Test_revealHandsBasic(t *testing.T) {
 	go gameState.revealHands()
 
 	result := <-gameState.PlayerChannels[0]
-	true_result := createEncodedMessage(Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
 	util.Assert(t, bytes.Equal(result, true_result))
 }
 
@@ -189,7 +190,7 @@ func Test_revealHandsTwoPlayers(t *testing.T) {
 
 	res1, res2 := <-gameState.PlayerChannels[0], <-gameState.PlayerChannels[1]
 
-	true_result := createEncodedMessage(Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
 	util.Assert(t, bytes.Equal(res1, true_result))
 	util.Assert(t, bytes.Equal(res2, true_result))
 }
@@ -202,7 +203,7 @@ func Test_revealHandsSomeDeadPlayers(t *testing.T) {
 
 	res1, res2, res3, res4 := <-gameState.PlayerChannels[0], <-gameState.PlayerChannels[1], <-gameState.PlayerChannels[2], <-gameState.PlayerChannels[3]
 
-	true_result := createEncodedMessage(Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
 	util.Assert(t, bytes.Equal(res1, true_result))
 	util.Assert(t, bytes.Equal(res2, true_result))
 	util.Assert(t, bytes.Equal(res3, true_result))
@@ -213,7 +214,7 @@ func Test_revealHandsRaceCondition(t *testing.T) {
 	var gameState GameState
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{4, 4, 5, 1, 1})}
 	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 1))
-	msg := Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{[]PlayerHand{PlayerHand([]int{4, 4, 5, 1, 1})}}}
+	msg := messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{[]PlayerHand{PlayerHand([]int{4, 4, 5, 1, 1})}}}
 	var output []byte
 
 	gameState.revealHands() //Go routine here
@@ -225,7 +226,7 @@ func Test_revealHandsRaceCondition(t *testing.T) {
 	output = <-gameState.PlayerChannels[0]
 	fmt.Println(string(output))
 	t.Log(string(output))
-	t.Log(string(createEncodedMessage(msg)))
-	util.Assert(t, bytes.Equal(output, createEncodedMessage(msg)))
+	t.Log(string(messages.CreateEncodedMessage(msg)))
+	util.Assert(t, bytes.Equal(output, messages.CreateEncodedMessage(msg)))
 
 }
