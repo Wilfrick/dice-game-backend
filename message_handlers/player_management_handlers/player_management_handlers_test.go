@@ -47,7 +47,12 @@ func Test_newLocation(t *testing.T) {
 
 func Test_lobbyToGameLocation(t *testing.T) {
 	channelLocations := message_handlers.ChannelLocations{}
+	unPH := UnassignedPlayerHandler{}
+	unPH.SetChannelLocations(&channelLocations)
+	lobbyMap := make(map[string]*LobbyHandler)
+	unPH.LobbyMap = &lobbyMap
 	lobbyChan := LobbyHandler{}
+	lobbyChan.GlobalUnassignedPlayerHandler = &unPH
 	lobbyChan.SetChannelLocations(&channelLocations)
 	gameState := game.GameState{}
 	gameState.SetChannelLocations(&channelLocations)
@@ -78,7 +83,8 @@ func Test_createLobby(t *testing.T) {
 	// allHandlers := message_handlers.MessageHandlers{} // needed so tests compile atm, but will be removed in future
 	unPH.SetChannelLocations(&channelLocations)
 	unPH.LobbyMap = &lobbyMap
-	unPH.ProcessUserMessage(msg, playerChan)
+
+	unPH.ProcessUserMessage(msg, playerChan) //Stuff done here
 	// util.Assert(t, len(allHandlers) == 2)
 	lobby, ok := channelLocations[playerChan]
 	t.Log(ok, unPH.UnassignedPlayers)
@@ -90,7 +96,7 @@ func Test_createLobby(t *testing.T) {
 	}
 	util.Assert(t, ok)
 	util.Assert(t, cast_lobby.LobbyPlayerChannels[0] == playerChan)
-	util.Assert(t, cast_lobby.LobbyID == "abcdefghiklmnopqrtsuvwxyz")
+	util.Assert(t, len(cast_lobby.LobbyID) >= 11)
 	// // Test should also check that a message is sent that contains a lobby ID corresponding to the new lobby created
 	// t.Fail() // must implement the above comment
 }
@@ -98,9 +104,16 @@ func Test_createGame(t *testing.T) {
 	playerChan := make(chan []byte)
 	util.ChanSink([]chan []byte{playerChan})
 	lobby := LobbyHandler{LobbyPlayerChannels: []chan []byte{playerChan}, LobbyID: "alex"}
+	lobbyMap := make(map[string]*LobbyHandler)
+	unPH := UnassignedPlayerHandler{}
+
+	lobby.GlobalUnassignedPlayerHandler = &unPH
 	msg := messages.Message{TypeDescriptor: "Start Game"}
 	channelLocations := message_handlers.ChannelLocations{}
 	channelLocations[playerChan] = &lobby
+	unPH.SetChannelLocations(&channelLocations)
+	unPH.LobbyMap = &lobbyMap
+
 	// allHandlers := message_handlers.MessageHandlers{} // needed so tests compile atm, but will be removed in future
 	lobby.SetChannelLocations(&channelLocations)
 	lobby.ProcessUserMessage(msg, playerChan)
