@@ -6,25 +6,26 @@ import (
 )
 
 func (gameState GameState) checkNewBetValid(newBet Bet) bool {
-	betValid := newBet.isGreaterThan(gameState.PrevMove.Value)
+	betIncreasing := newBet.isGreaterThan(gameState.PrevMove.Value)
+	betRejectedForOnesOnFirstTurn := gameState.PrevMove.MoveType != BET && newBet.FaceVal == 1
 	// betValid = true // ONLY For testing, not for production
-	return betValid
+	return betIncreasing && !betRejectedForOnesOnFirstTurn
 }
 
 func (gameState GameState) broadcastPlayerMove(playerMove PlayerMove) {
-	gameState.Broadcast(messages.Message{"RoundUpdate", RoundUpdate{MoveMade: playerMove, PlayerIndex: gameState.CurrentPlayerIndex}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundUpdate", Contents: RoundUpdate{MoveMade: playerMove, PlayerIndex: gameState.CurrentPlayerIndex}})
 }
 
 func (gameState GameState) broadcastNextPlayer() {
-	gameState.Broadcast(messages.Message{"RoundResult", RoundResult{PlayerIndex: gameState.CurrentPlayerIndex, Result: "next"}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{PlayerIndex: gameState.CurrentPlayerIndex, Result: "next"}})
 }
 
 func (gameState GameState) broadcastDiceDec(playerIndex int) {
-	gameState.Broadcast(messages.Message{"RoundResult", RoundResult{PlayerIndex: playerIndex, Result: DEC}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{PlayerIndex: playerIndex, Result: DEC}})
 }
 
 func (gameState GameState) broadcastDiceInc(playerIndex int) {
-	gameState.Broadcast(messages.Message{"RoundResult", RoundResult{PlayerIndex: playerIndex, Result: INC}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{PlayerIndex: playerIndex, Result: INC}})
 }
 
 func (gameState *GameState) processPlayerBet(playerMove PlayerMove) bool {
@@ -33,6 +34,7 @@ func (gameState *GameState) processPlayerBet(playerMove PlayerMove) bool {
 	if !betValid {
 		return false
 	}
+
 	gameState.broadcastPlayerMove(playerMove)
 
 	gameState.PrevMove = playerMove
@@ -88,6 +90,10 @@ func (gameState *GameState) updatePlayerIndexFinalBet(dice_change_player_index, 
 func (gameState *GameState) processPlayerDudo() bool {
 	fmt.Println("in ProcessPlayerMove, made into case 'Dudo' ")
 
+	if gameState.PrevMove.MoveType != BET { // could condition on PrevMove.Value as well if we wanted
+		return false
+	}
+
 	// dudo should always be valid, as long as the current player // checked earlier
 	gameState.broadcastPlayerMove(PlayerMove{MoveType: DUDO})
 	gameState.revealHands()
@@ -125,6 +131,10 @@ func (gameState *GameState) processPlayerDudo() bool {
 func (gameState *GameState) processPlayerCalza() bool {
 	fmt.Println("Made into Case Calza")
 	//Input already valid
+	if gameState.PrevMove.MoveType != BET {
+		return false
+	}
+	// Need to check that this is not the first move of a game
 	numAlivePlayers := len(gameState.alivePlayerIndices())
 	if numAlivePlayers <= 2 {
 		// We do not allow Calza with only 2 live players
