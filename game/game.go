@@ -75,6 +75,7 @@ type PlayerHandLengthsUpdate struct {
 
 type PlayerHandsContents struct {
 	PlayerHands []PlayerHand
+	FinalBet    PlayerMove
 }
 
 // 3 players left, A1, B1, C4

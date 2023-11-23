@@ -42,7 +42,9 @@ func (gameState GameState) distributeHands() {
 }
 
 func (gameState GameState) revealHands() {
-	playerHandContentsMessage := messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}}
+	playerHandsContents := PlayerHandsContents{PlayerHands: gameState.PlayerHands, FinalBet: gameState.PrevMove}
+	// could also set the moveType of the FinalBet to be dudo or calza
+	playerHandContentsMessage := messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: playerHandsContents}
 	// fmt.Println(playerHandContentsMessage)
 	gameState.Broadcast(playerHandContentsMessage)
 	// fmt.Println(playerHandContentsMessage)

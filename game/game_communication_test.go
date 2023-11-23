@@ -178,7 +178,7 @@ func Test_revealHandsBasic(t *testing.T) {
 	go gameState.revealHands()
 
 	result := <-gameState.PlayerChannels[0]
-	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{PlayerHands: gameState.PlayerHands}})
 	util.Assert(t, bytes.Equal(result, true_result))
 }
 
@@ -190,7 +190,7 @@ func Test_revealHandsTwoPlayers(t *testing.T) {
 
 	res1, res2 := <-gameState.PlayerChannels[0], <-gameState.PlayerChannels[1]
 
-	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{PlayerHands: gameState.PlayerHands}})
 	util.Assert(t, bytes.Equal(res1, true_result))
 	util.Assert(t, bytes.Equal(res2, true_result))
 }
@@ -203,7 +203,7 @@ func Test_revealHandsSomeDeadPlayers(t *testing.T) {
 
 	res1, res2, res3, res4 := <-gameState.PlayerChannels[0], <-gameState.PlayerChannels[1], <-gameState.PlayerChannels[2], <-gameState.PlayerChannels[3]
 
-	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{gameState.PlayerHands}})
+	true_result := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{PlayerHands: gameState.PlayerHands}})
 	util.Assert(t, bytes.Equal(res1, true_result))
 	util.Assert(t, bytes.Equal(res2, true_result))
 	util.Assert(t, bytes.Equal(res3, true_result))
@@ -214,7 +214,7 @@ func Test_revealHandsRaceCondition(t *testing.T) {
 	var gameState GameState
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{4, 4, 5, 1, 1})}
 	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 1))
-	msg := messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{[]PlayerHand{PlayerHand([]int{4, 4, 5, 1, 1})}}}
+	msg := messages.Message{TypeDescriptor: "PlayerHandsContents", Contents: PlayerHandsContents{PlayerHands: []PlayerHand{PlayerHand([]int{4, 4, 5, 1, 1})}}}
 	var output []byte
 
 	gameState.revealHands() //Go routine here
