@@ -1,13 +1,13 @@
 package main
 
 import (
-	"HigherLevelPerudoServer/game"
 	"HigherLevelPerudoServer/message_handlers"
 	"HigherLevelPerudoServer/message_handlers/player_management_handlers"
 	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 
 	"golang.org/x/net/websocket"
@@ -23,7 +23,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 			fmt.Println("Waiting for data")
 			n, err := ws.Read(buff)
 			if err != nil {
-				fmt.Println(err.Error())
+				fmt.Printf("Websocket closed with error: %s \n", err.Error())
 				(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
 				delete(*channelLocations, thisChan)
 				// should also remove thisChan from allChans, so allChans should probably be a map rather than a slice
@@ -72,25 +72,71 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 			// 	}
 			// }
 
-			fmt.Println("Number of Connections", len(*channelLocations))
+			fmt.Println("Number of Connections", len(*channelLocations), "with ", len(globalUnassignedPlayersHandler.UnassignedPlayers), "players unassigned")
 		}
 	}
+}
+func generate_random_chars() string {
+	const NUMBER_OF_CHARS = 10
+	hash_chars := "abcdefghijklmnopqrtsuvwxyz"
+	_ = hash_chars[rand.Intn(len(hash_chars))] // https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go has some good content
+	hash := []byte{}
+	for i := 0; i < NUMBER_OF_CHARS; i++ {
+		hash = append(hash, hash_chars[rand.Intn(len(hash_chars))])
+	}
+	random_chars := string(hash)
+	return random_chars
+}
+
+func generate_new_client_ID(globalClientIDToChannels map[string]chan []byte) string {
+	candidateClientID := generate_random_chars()
+	i := 0
+	for _, ok := globalClientIDToChannels[candidateClientID]; ok && i < 1000; _, ok = globalClientIDToChannels[candidateClientID] {
+		candidateClientID = generate_random_chars()
+		i++
+	} // we only run for max 1000 iterations. Possibly have a collision if this is exceeded
+	if i == 1000 {
+		fmt.Println("Likely collision")
+	}
+	return candidateClientID
+}
+
+func handleClientHandshake(ws *websocket.Conn, globalClientIDToChannels *map[string]chan []byte,
+	globalUnassignedPlayersHandler *player_management_handlers.UnassignedPlayerHandler, channelLocations *message_handlers.ChannelLocations) chan []byte {
+	buff := make([]byte, 1024)
+	n, err := ws.Read(buff)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil
+	}
+	clientID := string(buff[:n])
+	fmt.Printf("ClientID: %s \n", clientID)
+	thisChan, ok := (*globalClientIDToChannels)[clientID]
+	if !ok {
+		// This is a new ClientID and so we want to give the client a new ID
+
+		clientID = generate_new_client_ID(*globalClientIDToChannels)
+		thisChan = make(chan []byte)                     // Make a new channel
+		(*globalClientIDToChannels)[clientID] = thisChan //Record this channel against their clientID
+		globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)
+		(*channelLocations)[thisChan] = globalUnassignedPlayersHandler
+	}
+	// newClientID := "AlexanderWarr"
+	ws.Write([]byte(clientID)) // Echo back to the client their ID (new if default)
+	return thisChan
 }
 
 func main() {
 	// connectionChannels := make(map[chan []byte]int)
 	channelLocations := message_handlers.ChannelLocations{}
-	activeHandlers := message_handlers.MessageHandlers{}
-	activeHandlers[&game.GameState{}] = struct{}{}
+	globalClientIDToChannels := make(map[string]chan []byte)
 	globalLobbyMap := make(map[string]*player_management_handlers.LobbyHandler)
 	globalUnassignedPlayersHandler := player_management_handlers.UnassignedPlayerHandler{}
 	globalUnassignedPlayersHandler.LobbyMap = &globalLobbyMap
 	globalUnassignedPlayersHandler.SetChannelLocations(&channelLocations)
 	// activeHandlers[&globalUnassignedPlayersHandler] = struct{}{}
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
-		thisChan := make(chan []byte)
-		globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)
-		channelLocations[thisChan] = &globalUnassignedPlayersHandler
+		thisChan := handleClientHandshake(ws, &globalClientIDToChannels, &globalUnassignedPlayersHandler, &channelLocations)
 
 		manageWsConn(ws, thisChan, &channelLocations, &globalUnassignedPlayersHandler)
 	}))
