@@ -1,6 +1,6 @@
 # dice-game-backend
 
-This is the backend for browser based multiplayer dice game, based on Perudo and Liar's Dice.
+This is the backend for a browser based multiplayer dice game, based on Perudo and Liar's Dice.
 
 Written in Go 1.21 using websockets. 
 
