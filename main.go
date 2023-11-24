@@ -24,8 +24,8 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 			n, err := ws.Read(buff)
 			if err != nil {
 				fmt.Printf("Websocket closed with error: %s \n", err.Error())
-				(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
-				delete(*channelLocations, thisChan)
+				// (*channelLocations)[thisChan].MoveChannel(thisChan, nil)
+				// delete(*channelLocations, thisChan)
 				// should also remove thisChan from allChans, so allChans should probably be a map rather than a slice
 				// er.Error() == 'EOF' represents the connection closing
 				return
@@ -40,10 +40,10 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 			// fmt.Println("This channel just got", string(b))
 			_, err := ws.Write(b)
 			if err != nil {
-				fmt.Println(err.Error())
-				(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
-				delete(*channelLocations, thisChan)
-				continue
+				fmt.Printf("Websocket couldn't write with error: %s \n", err.Error())
+				// (*channelLocations)[thisChan].MoveChannel(thisChan, nil)
+				// delete(*channelLocations, thisChan)
+				continue // very questionable. Should probably return
 			}
 			fmt.Println("Data written out to a websocket")
 		case b := <-externalData:
