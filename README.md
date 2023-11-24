@@ -1,19 +1,23 @@
 # dice-game-backend
 
-This will serve as the backend for an online dice game.
+This is the backend for browser based multiplayer dice game, based on Perudo and Liar's Dice.
 
-Written in Go 1.21.1
+Written in Go 1.21 using websockets. 
 
-This is currently a work in progress.
+We chose these technologies to achieve our goals of creating a browser based game with two way communication that could handle a high degree of concurrency.
 
+This is currently a work in progress and you can see a live demo [here](http://aw808.user.srcf.net/)
 
-# Usage
+# Running Locally
 To run the server, use `go run main.go`
 
-To run the tests, use `go test ./game`
+To run the tests, use `go test ./...`
 
-To see the game in action you will need to run the front end, which can be found [here](https://github.com/Wilfrick/dice-game-frontend)
+To play the game locally you will need to run the front end, which can be found [here](https://github.com/Wilfrick/dice-game-frontend)
+
+The included config.json file can be used to set the port that the server runs on and the front end should accept the same config.json file.
 
 # Deployment
 For systemd:
-`dice-game-backend.service` needs to be placed `~/.config/systemd/user/dice-game-backend.service`
+`dice-game-backend.service` needs to be placed in `~/.config/systemd/user/dice-game-backend.service`
+
