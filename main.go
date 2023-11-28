@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 )
 
 func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *message_handlers.ChannelLocations,
@@ -18,10 +18,12 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 
 	externalData := make(chan []byte)
 	go func() {
-		buff := make([]byte, 1024)
+		// buff := make([]byte, 1024)
 		for {
 			fmt.Println("Waiting for data")
-			n, err := ws.Read(buff)
+			message_type, buff, err := ws.ReadMessage()
+			// fmt.Println("Message Type", message_type)
+			_ = message_type
 			if err != nil {
 				fmt.Println(err.Error())
 				(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
@@ -31,14 +33,15 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 				return
 			}
 			// fmt.Println("Sending data internally: ", buff[:n])
-			externalData <- buff[:n]
+			externalData <- buff
 		}
 	}()
 	for {
 		select {
 		case b := <-thisChan:
 			// fmt.Println("This channel just got", string(b))
-			_, err := ws.Write(b)
+			err := ws.WriteMessage(websocket.TextMessage, b)
+
 			if err != nil {
 				fmt.Println(err.Error())
 				(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
@@ -87,13 +90,29 @@ func main() {
 	globalUnassignedPlayersHandler.LobbyMap = &globalLobbyMap
 	globalUnassignedPlayersHandler.SetChannelLocations(&channelLocations)
 	// activeHandlers[&globalUnassignedPlayersHandler] = struct{}{}
-	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
+	upgrader := websocket.Upgrader{}
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // less than Zero CORS security.
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		c, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			fmt.Println("Upgrade:", err)
+			return
+		}
+		defer c.Close()
 		thisChan := make(chan []byte)
 		globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)
 		channelLocations[thisChan] = &globalUnassignedPlayersHandler
 
-		manageWsConn(ws, thisChan, &channelLocations, &globalUnassignedPlayersHandler)
-	}))
+		manageWsConn(c, thisChan, &channelLocations, &globalUnassignedPlayersHandler)
+	})
+
+	// http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
+	// 	thisChan := make(chan []byte)
+	// 	globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)
+	// 	channelLocations[thisChan] = &globalUnassignedPlayersHandler
+
+	// 	manageWsConn(ws, thisChan, &channelLocations, &globalUnassignedPlayersHandler)
+	// }))
 
 	// // I think we can write code down here.
 	// playerHand := game.RandomPlayerHand(5)
