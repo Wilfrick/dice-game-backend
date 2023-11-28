@@ -80,6 +80,8 @@ type PlayerHandsContents struct {
 	FinalBet    PlayerMove
 }
 
+type PalacifoRoundMessage bool
+
 // 3 players left, A1, B1, C4
 // A calls Dudo on C's bet and is wrong
 
@@ -139,9 +141,11 @@ func (gameState *GameState) startNewRound() {
 			// could have a break here, but don't need to in this specific case
 		}
 	}
+
 	gameState.Broadcast(messages.Message{TypeDescriptor: "PlayerHandLengthsUpdate", Contents: InitialPlayerHandLengths})
 	// gameState.CurrentPlayerIndex = 0 //EVIL SIN CRIME GUILT FILTH UNWASHED
 	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{gameState.CurrentPlayerIndex, "next"}})
+	gameState.Broadcast(messages.Message{TypeDescriptor: "PalacifoRound", Contents: gameState.IsPalacifoRound})
 }
 
 // Processes new player Move
