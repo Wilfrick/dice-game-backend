@@ -76,11 +76,12 @@ func Test_isBetTrueOnesCase(t *testing.T) {
 	}
 }
 
-func xTest_processPlayerMoveDudoFalse(t *testing.T) {
+func Test_processPlayerMoveDudoFalse(t *testing.T) {
 	var gs GameState
 	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 2}), PlayerHand([]int{1, 1}), PlayerHand([]int{4, 4})}
 	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	util.ChanSink(gs.PlayerChannels)
+	gs.PalacifoablePlayers = []bool{true, true, true}
 	gs.PrevMove = PlayerMove{MoveType: BET, Value: Bet{5, 2}}
 	gs.CurrentPlayerIndex = 1
 	playerMove := PlayerMove{MoveType: DUDO}     // Dudo False, so P1 loses a dice
@@ -139,6 +140,7 @@ func Test_processPlayerMoveDudoFalseKilling(t *testing.T) {
 		}
 	}()
 	gs.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{2, 2}}
+	gs.PalacifoablePlayers = []bool{true, true, true}
 	gs.CurrentPlayerIndex = 1
 	playerMove := PlayerMove{MoveType: "Dudo"} // False 3 2's, so P1 loses and dies
 	validity := gs.ProcessPlayerMove(playerMove)

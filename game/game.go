@@ -19,6 +19,8 @@ type GameState struct {
 	GameInProgress       bool
 	AllowableChannelLock int // should live with PlayerChannels, wherever that ends up
 	channelLocations     *message_handlers.ChannelLocations
+	PalacifoablePlayers  []bool
+	IsPalacifoRound      bool
 }
 
 func (gameState *GameState) SetChannelLocations(channelLocations *message_handlers.ChannelLocations) {
@@ -107,6 +109,10 @@ func (gameState *GameState) StartNewGame() {
 	// gameState.PlayerChannels = maps.Keys(*gameState.channelLocations) // PlayerChannels were already set from the lobby
 
 	gameState.PlayerHands = make([]PlayerHand, len(gameState.PlayerChannels))
+	gameState.PalacifoablePlayers = make([]bool, len(gameState.PlayerHands))
+	for i := range gameState.PalacifoablePlayers {
+		gameState.PalacifoablePlayers[i] = true
+	}
 	gameState.GameInProgress = true
 	for i := range gameState.PlayerHands {
 		gameState.PlayerHands[i] = RandomPlayerHand(5)
@@ -120,9 +126,19 @@ func (gameState *GameState) startNewRound() {
 	fmt.Println("Called StartNewRound")
 	gameState.randomiseCurrentHands()
 	gameState.distributeHands()
+	// Zero out previous
 	gameState.PrevMove = PlayerMove{} // 'zero out' the previous move
+	gameState.IsPalacifoRound = false
 
 	InitialPlayerHandLengths := PlayerHandLengthsUpdate{util.Map(func(x PlayerHand) int { return len(x) }, gameState.PlayerHands)}
+
+	for hand_index, hand_length := range InitialPlayerHandLengths.PlayerHandLengths {
+		if hand_length == 1 && gameState.PalacifoablePlayers[hand_index] {
+			gameState.IsPalacifoRound = true
+			gameState.PalacifoablePlayers[hand_index] = false
+			// could have a break here, but don't need to in this specific case
+		}
+	}
 	gameState.Broadcast(messages.Message{TypeDescriptor: "PlayerHandLengthsUpdate", Contents: InitialPlayerHandLengths})
 	// gameState.CurrentPlayerIndex = 0 //EVIL SIN CRIME GUILT FILTH UNWASHED
 	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{gameState.CurrentPlayerIndex, "next"}})

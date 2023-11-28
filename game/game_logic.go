@@ -21,7 +21,12 @@ func (gameState GameState) isBetTrue() bool {
 	fmt.Println("Called isBetTrue")
 	// TODO, for Dudo
 	bet := gameState.PrevMove.Value
-	dice_face_counts := count_dice_faces_considering_wild_ones(gameState)
+	var dice_face_counts []int
+	if !gameState.IsPalacifoRound {
+		dice_face_counts = count_dice_faces_considering_wild_ones(gameState)
+	} else {
+		dice_face_counts = count_dice_faces(gameState)
+	}
 
 	return dice_face_counts[bet.FaceVal] >= bet.NumDice
 }
