@@ -1,7 +1,7 @@
 package main
 
 import (
-	"HigherLevelPerudoServer/game"
+	"HigherLevelPerudoServer/handshake"
 	"HigherLevelPerudoServer/message_handlers"
 	"HigherLevelPerudoServer/message_handlers/player_management_handlers"
 	"HigherLevelPerudoServer/messages"
@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 )
 
 func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *message_handlers.ChannelLocations,
@@ -18,32 +18,49 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 
 	externalData := make(chan []byte)
 	go func() {
-		buff := make([]byte, 1024)
+		// buff := make([]byte, 1024)
 		for {
 			fmt.Println("Waiting for data")
-			n, err := ws.Read(buff)
+			message_type, buff, err := ws.ReadMessage()
+			// fmt.Println("Message Type", message_type)
+			_ = message_type
 			if err != nil {
-				fmt.Println(err.Error())
-				(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
-				delete(*channelLocations, thisChan)
+				fmt.Printf("Websocket closed with error: %s \n", err.Error())
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+					fmt.Println("There was an abnormal closure")
+					// We should not delete the channel and this players stuff
+
+				} else {
+					(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
+					delete(*channelLocations, thisChan)
+				}
+				// (*channelLocations)[thisChan].MoveChannel(thisChan, nil)
+				// delete(*channelLocations, thisChan)
 				// should also remove thisChan from allChans, so allChans should probably be a map rather than a slice
 				// er.Error() == 'EOF' represents the connection closing
 				return
 			}
 			// fmt.Println("Sending data internally: ", buff[:n])
-			externalData <- buff[:n]
+			externalData <- buff
 		}
 	}()
 	for {
 		select {
 		case b := <-thisChan:
 			// fmt.Println("This channel just got", string(b))
-			_, err := ws.Write(b)
+			err := ws.WriteMessage(websocket.TextMessage, b)
+
 			if err != nil {
-				fmt.Println(err.Error())
-				(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
-				delete(*channelLocations, thisChan)
-				continue
+				fmt.Printf("Websocket couldn't write with error: %s \n", err.Error())
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+					fmt.Println("There was an abnormal closure")
+					// We should not delete the channel and this players stuff
+
+				} else {
+					(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
+					delete(*channelLocations, thisChan)
+				}
+				continue // very questionable. Should probably return
 			}
 			fmt.Println("Data written out to a websocket")
 		case b := <-externalData:
@@ -72,7 +89,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 			// 	}
 			// }
 
-			fmt.Println("Number of Connections", len(*channelLocations))
+			fmt.Println("Number of Connections", len(*channelLocations), "with ", len(globalUnassignedPlayersHandler.UnassignedPlayers), "players unassigned")
 		}
 	}
 }
@@ -80,20 +97,32 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 func main() {
 	// connectionChannels := make(map[chan []byte]int)
 	channelLocations := message_handlers.ChannelLocations{}
-	activeHandlers := message_handlers.MessageHandlers{}
-	activeHandlers[&game.GameState{}] = struct{}{}
+	globalClientIDToChannels := make(map[string]chan []byte)
 	globalLobbyMap := make(map[string]*player_management_handlers.LobbyHandler)
 	globalUnassignedPlayersHandler := player_management_handlers.UnassignedPlayerHandler{}
 	globalUnassignedPlayersHandler.LobbyMap = &globalLobbyMap
 	globalUnassignedPlayersHandler.SetChannelLocations(&channelLocations)
 	// activeHandlers[&globalUnassignedPlayersHandler] = struct{}{}
-	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
-		thisChan := make(chan []byte)
-		globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)
-		channelLocations[thisChan] = &globalUnassignedPlayersHandler
+	upgrader := websocket.Upgrader{}
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // less than Zero CORS security.
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		c, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			fmt.Println("Upgrade:", err)
+			return
+		}
+		defer c.Close()
+		thisChan := handshake.HandleClientHandshake(c, &globalClientIDToChannels, &globalUnassignedPlayersHandler, &channelLocations)
+		manageWsConn(c, thisChan, &channelLocations, &globalUnassignedPlayersHandler)
+	})
 
-		manageWsConn(ws, thisChan, &channelLocations, &globalUnassignedPlayersHandler)
-	}))
+	// http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
+	// 	thisChan := make(chan []byte)
+	// 	globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)
+	// 	channelLocations[thisChan] = &globalUnassignedPlayersHandler
+
+	// 	manageWsConn(ws, thisChan, &channelLocations, &globalUnassignedPlayersHandler)
+	// }))
 
 	// // I think we can write code down here.
 	// playerHand := game.RandomPlayerHand(5)
