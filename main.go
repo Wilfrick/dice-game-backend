@@ -26,6 +26,14 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 			_ = message_type
 			if err != nil {
 				fmt.Printf("Websocket closed with error: %s \n", err.Error())
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+					fmt.Println("There was an abnormal closure")
+					// We should not delete the channel and this players stuff
+
+				} else {
+					(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
+					delete(*channelLocations, thisChan)
+				}
 				// (*channelLocations)[thisChan].MoveChannel(thisChan, nil)
 				// delete(*channelLocations, thisChan)
 				// should also remove thisChan from allChans, so allChans should probably be a map rather than a slice
@@ -44,8 +52,14 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 
 			if err != nil {
 				fmt.Printf("Websocket couldn't write with error: %s \n", err.Error())
-				// (*channelLocations)[thisChan].MoveChannel(thisChan, nil)
-				// delete(*channelLocations, thisChan)
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+					fmt.Println("There was an abnormal closure")
+					// We should not delete the channel and this players stuff
+
+				} else {
+					(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
+					delete(*channelLocations, thisChan)
+				}
 				continue // very questionable. Should probably return
 			}
 			fmt.Println("Data written out to a websocket")
@@ -148,8 +162,6 @@ func main() {
 		}
 		defer c.Close()
 		thisChan := handleClientHandshake(c, &globalClientIDToChannels, &globalUnassignedPlayersHandler, &channelLocations)
-		globalUnassignedPlayersHandler.UnassignedPlayers = append(globalUnassignedPlayersHandler.UnassignedPlayers, thisChan)
-		channelLocations[thisChan] = &globalUnassignedPlayersHandler
 		manageWsConn(c, thisChan, &channelLocations, &globalUnassignedPlayersHandler)
 	})
 
