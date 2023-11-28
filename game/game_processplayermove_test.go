@@ -201,3 +201,132 @@ func Test_rejectOnesOnTheFirstMoveAfterACalza(t *testing.T) {
 	res := gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
 	util.Assert(t, res == false)
 }
+
+func xTest_checkPalacifoBettingRuleOnePlayerFirstTime(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3)), PalacifoablePlayers: []bool{true, true, true}}
+	gs.PrevMove = PlayerMove{MoveType: DUDO}
+	util.ChanSink(gs.PlayerChannels)
+	bet := Bet{1, 1}
+	res := gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, gs.IsPalacifoRound == true)
+	util.Assert(t, res == true)                        // because this is a palacifo round
+	util.Assert(t, gs.PalacifoablePlayers[0] == false) // this player can't trigger another palacifo round
+}
+
+func xTest_checkPalacifoBettingRulePalacifoFollowingMove(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3)), PalacifoablePlayers: []bool{true, true, true}}
+	gs.PrevMove = PlayerMove{MoveType: DUDO}
+	util.ChanSink(gs.PlayerChannels)
+	bet := Bet{1, 1}
+	res := gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, gs.IsPalacifoRound == true)
+	util.Assert(t, res == true)                        // because this is a palacifo round
+	util.Assert(t, gs.PalacifoablePlayers[0] == false) // this player can't trigger another palacifo round
+	bet = Bet{1, 2}
+	res = gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == false) // because this is a palacifo round and you must follow the rank
+	// util.Assert(t, gs.PalacifoablePlayers[0] == false)
+}
+
+func xTest_checkPalacifoBettingRulePalacifoFollowingMovePlayerWithOneDice(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1}, {3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3)), PalacifoablePlayers: []bool{false, false, true}}
+	bet := Bet{1, 1}
+	gs.PrevMove = PlayerMove{MoveType: BET, Value: bet}
+	gs.CurrentPlayerIndex = 1
+	util.ChanSink(gs.PlayerChannels)
+
+	bet = Bet{1, 6}
+
+	res := gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == true) // because this is a palacifo round but a player on one dice can change the suit
+	// util.Assert(t, gs.PalacifoablePlayers[0] == false) // this player can't trigger another palacifo round
+	bet = Bet{2, 2}
+	res = gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == false) // same as above
+}
+func xTest_checkPalacifoOnesBiddableFirstTurn(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3)), PalacifoablePlayers: []bool{true, true, true}}
+	gs.PrevMove = PlayerMove{MoveType: DUDO}
+	gs.CurrentPlayerIndex = 0
+	util.ChanSink(gs.PlayerChannels)
+	bet := Bet{1, 1}
+	res := gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == true)                        // because this is a palacifo round
+	util.Assert(t, gs.PalacifoablePlayers[0] == false) // this player can't trigger another palacifo round
+}
+
+func xTest_onPalacifoOnesNotWildcard(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3)), PalacifoablePlayers: []bool{false, true, true}}
+	gs.IsPalacifoRound = true
+	bet_dependant_on_one := Bet{FaceVal: 3, NumDice: 4}
+	gs.PrevMove = PlayerMove{MoveType: BET, Value: bet_dependant_on_one}
+	gs.CurrentPlayerIndex = 1
+	res := gs.ProcessPlayerMove(PlayerMove{MoveType: DUDO})
+	util.Assert(t, res == true)
+	util.Assert(t, len(gs.PlayerHands[1]) == 2)
+}
+
+func xTest_onPalacifoCalzaNotAllowed(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3)), PalacifoablePlayers: []bool{false, true, true}}
+	gs.IsPalacifoRound = true
+	bet_dependant_on_one := Bet{FaceVal: 3, NumDice: 3}
+	gs.PrevMove = PlayerMove{MoveType: BET, Value: bet_dependant_on_one}
+	gs.CurrentPlayerIndex = 1
+	res := gs.ProcessPlayerMove(PlayerMove{MoveType: CALZA})
+	util.Assert(t, res == false)
+	// util.Assert(t, len(gs.PlayerHands[1]) == 2)
+}
+
+func xTest_updatePlayerIndexFinalBetDudoTrueNoDeathNotPalacifo(t *testing.T) {
+	gameState := GameState{PlayerHands: []PlayerHand{PlayerHand{1, 2, 4}, PlayerHand{2, 3, 5}, PlayerHand{3, 5, 6}},
+		PrevMove: PlayerMove{MoveType: BET, Value: Bet{3, 2}}}
+	gameState.processPlayerBet(PlayerMove{MoveType: BET, Value: Bet{2, 2}})
+
+	util.Assert(t, gameState.IsPalacifoRound == false)
+}
+
+func xTest_gameRoundStartSetsIsPalacifoRound(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3)), PalacifoablePlayers: []bool{true, true, true}}
+	gs.IsPalacifoRound = false
+	gs.startNewRound()
+	util.Assert(t, gs.IsPalacifoRound == true)
+}
+
+func xTest_PalacifoBettingOrder(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1}, {2}, {6}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3)), PalacifoablePlayers: []bool{false, false, false}, PrevMove: PlayerMove{MoveType: DUDO}}
+	gs.IsPalacifoRound = true
+	// On a Palaifo round, if a player has 1 dice, they can change faceval following
+	// 1 < ..< 6
+	// annoying cases below
+	bet := Bet{1, 1}
+	res := gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == true)
+
+	bet = Bet{1, 2}
+	res = gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == true)
+
+	bet = Bet{1, 3}
+	res = gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == true)
+
+	bet = Bet{1, 4}
+	res = gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == true)
+
+	bet = Bet{1, 5}
+	res = gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == true)
+
+	bet = Bet{1, 6}
+	res = gs.processPlayerBet(PlayerMove{MoveType: BET, Value: bet})
+	util.Assert(t, res == true)
+
+}
+
+func xTest_gameRoundStartSetsIsPalacifoRoundOnlyFirstTime(t *testing.T) {
+	gs := GameState{PlayerHands: []PlayerHand{{1}, {3, 3, 3}, {4, 4, 4}}, PlayerChannels: util.InitialiseChans(make([]chan []byte, 3)), PalacifoablePlayers: []bool{false, true, true}}
+	gs.IsPalacifoRound = false
+	gs.startNewRound()
+	util.Assert(t, gs.IsPalacifoRound == false)
+}
