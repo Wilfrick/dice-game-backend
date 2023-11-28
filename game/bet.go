@@ -26,3 +26,17 @@ func (bet1 Bet) isGreaterThan(bet2 Bet) bool {
 	return bet1.FaceVal > bet2.FaceVal
 
 }
+
+func (bet1 Bet) isGreaterThanPalacifo(bet2 Bet) bool {
+	//1's NOT special
+	//1<2<3<...<6
+
+	// The following modifies a copy of bet1, bet2
+	// So does not modify external state
+
+	if bet1.NumDice != bet2.NumDice {
+		return bet1.NumDice > bet2.NumDice
+	}
+	return bet1.FaceVal > bet2.FaceVal
+
+}
