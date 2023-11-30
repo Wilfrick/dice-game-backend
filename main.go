@@ -13,8 +13,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *message_handlers.ChannelLocations,
-	globalUnassignedPlayersHandler *player_management_handlers.UnassignedPlayerHandler) {
+func tidyConnection(thisChan chan []byte, thisClientID string, channelLocations *message_handlers.ChannelLocations, globalClientIDsToChannel *map[string]chan []byte) {
+	(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
+	delete(*channelLocations, thisChan)
+	delete(*globalClientIDsToChannel, thisClientID)
+}
+
+func manageWsConn(ws *websocket.Conn, thisChan chan []byte, thisClientID string, channelLocations *message_handlers.ChannelLocations,
+	globalUnassignedPlayersHandler *player_management_handlers.UnassignedPlayerHandler, globalClientIDsToChannel *map[string]chan []byte) {
 
 	externalData := make(chan []byte)
 	go func() {
@@ -31,8 +37,8 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 					// We should not delete the channel and this players stuff
 
 				} else {
-					(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
-					delete(*channelLocations, thisChan)
+					tidyConnection(thisChan, thisClientID, channelLocations, globalClientIDsToChannel)
+
 				}
 				// (*channelLocations)[thisChan].MoveChannel(thisChan, nil)
 				// delete(*channelLocations, thisChan)
@@ -57,8 +63,7 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, channelLocations *me
 					// We should not delete the channel and this players stuff
 
 				} else {
-					(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
-					delete(*channelLocations, thisChan)
+					tidyConnection(thisChan, thisClientID, channelLocations, globalClientIDsToChannel)
 				}
 				continue // very questionable. Should probably return
 			}
@@ -112,8 +117,8 @@ func main() {
 			return
 		}
 		defer c.Close()
-		thisChan := handshake.HandleClientHandshake(c, &globalClientIDToChannels, &globalUnassignedPlayersHandler, &channelLocations)
-		manageWsConn(c, thisChan, &channelLocations, &globalUnassignedPlayersHandler)
+		thisChan, clientID := handshake.HandleClientHandshake(c, &globalClientIDToChannels, &globalUnassignedPlayersHandler, &channelLocations)
+		manageWsConn(c, thisChan, clientID, &channelLocations, &globalUnassignedPlayersHandler, &globalClientIDToChannels)
 	})
 
 	// http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {

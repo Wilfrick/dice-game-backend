@@ -50,12 +50,12 @@ func findAndInitialiseClientID(clientID string, globalClientIDToChannels *map[st
 }
 
 func HandleClientHandshake(ws *websocket.Conn, globalClientIDToChannels *map[string]chan []byte,
-	globalUnassignedPlayersHandler *player_management_handlers.UnassignedPlayerHandler, channelLocations *message_handlers.ChannelLocations) chan []byte {
+	globalUnassignedPlayersHandler *player_management_handlers.UnassignedPlayerHandler, channelLocations *message_handlers.ChannelLocations) (chan []byte, string) {
 	// buff := make([]byte, 1024)
 	_, buff, err := ws.ReadMessage()
 	if err != nil {
 		fmt.Println(err.Error())
-		return nil
+		return nil, ""
 	}
 	clientID := string(buff)
 	fmt.Printf("ClientID: %s \n", clientID)
@@ -65,5 +65,5 @@ func HandleClientHandshake(ws *websocket.Conn, globalClientIDToChannels *map[str
 		fmt.Println(err.Error())
 		// return nil
 	}
-	return thisChan
+	return thisChan, clientID
 }
