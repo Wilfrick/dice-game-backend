@@ -88,10 +88,11 @@ func (unPH *UnassignedPlayerHandler) ProcessUserMessage(msg messages.Message, th
 		lobbyJoinResponse := LobbyJoinResponse{userReadableResponse: "Successfully joined lobby with given ID", LobbyID: lobbyID, NumPlayers: numLobbyPlayers}
 		msg = messages.Message{TypeDescriptor: "Lobby Join Accepted", Contents: lobbyJoinResponse}
 
-		encoded_msg := messages.CreateEncodedMessage(msg) // this should really be lobby.Broadcast, probably using a go routine
-		for _, lobbyChan := range lobby.LobbyPlayerChannels {
-			lobbyChan <- encoded_msg
-		}
+		// encoded_msg := messages.CreateEncodedMessage(msg) // this should really be lobby.Broadcast, probably using a go routine
+		lobby.Broadcast(msg)
+		// for _, lobbyChan := range lobby.LobbyPlayerChannels {
+		// 	lobbyChan <- encoded_msg
+		// }
 
 		// thisChan <- messages.CreateEncodedMessage(msg)
 
