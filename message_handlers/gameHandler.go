@@ -98,10 +98,17 @@ func (gameHandler *GameHandler) ProcessUserMessage(userMessage messages.Message,
 			thisChan <- messages.PackMessage("You cannot return all players to the lobby whilst the game is in progress", nil)
 			return
 		}
-		// new_lobby := player_management_handlers.LobbyHandler{LobbyID: gameState.GameID}
-		// gameState
-		returnToLobbyMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/lobby"}
-		gameHandler.gameState.Broadcast(returnToLobbyMessage)
+		new_lobby := LobbyHandler{LobbyID: gameHandler.gameState.GameID, GlobalUnassignedPlayerHandler: gameHandler.GlobalUnassignedPlayerHandler}
+		new_lobby.SetChannelLocations(gameHandler.channelLocations)
+		for remaining := len(gameHandler.gameState.PlayerChannels); remaining > 0; remaining = len(gameHandler.gameState.PlayerChannels) {
+			gameHandler.MoveChannel(gameHandler.gameState.PlayerChannels[remaining-1], &new_lobby)
+		}
+
+		(*gameHandler.GlobalUnassignedPlayerHandler.LobbyMap)[new_lobby.LobbyID] = &new_lobby
+		numLobbyPlayers := len(new_lobby.LobbyPlayerChannels) // similar code in lines 85-88 of unPHandler.go, possible refactoring in future
+		lobbyJoinResponse := LobbyJoinResponse{userReadableResponse: "Successfully joined lobby with given ID", LobbyID: new_lobby.LobbyID, NumPlayers: numLobbyPlayers}
+		msg := messages.Message{TypeDescriptor: "Lobby Join Accepted", Contents: lobbyJoinResponse}
+		new_lobby.Broadcast(msg)
 	}
 
 }
