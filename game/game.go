@@ -241,6 +241,16 @@ func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thi
 		// move was valid, broadcast new state
 
 		// will need to let players know the result of updating the game state
+	case "LeaveGame":
+		fmt.Printf("Player %d tried to leave the game \n", slices.Index(gameState.PlayerChannels, thisChan))
+
+	case "ReturnAllToLobby":
+		fmt.Println("A player tried to return all to the lobby")
+		if gameState.GameInProgress {
+			fmt.Println("A player tried to return all players during the game")
+			thisChan <- messages.PackMessage("You cannot return all players to the lobby whilst the game is in progress", nil)
+			return
+		}
 	}
 
 }

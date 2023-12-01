@@ -43,6 +43,7 @@ Package structure:
 
 {"TypeDescriptor":"RoundUpdate","Contents":{"MoveMade":{"MoveType":"Calza","Value":{"NumDice":0,"FaceVal":0}},"PlayerIndex":0}}
 
+### End of game options
 End of game where to allow people to go and related thoughts:
 
 When a game ends, it would be nice to allow players to return to a lobby and potentially play together again. Concerns around this is: What if a player remains in the game? Note we could also just force all players back into the lobby and resolve things from there to avoid any kind of player remaining in the game.
