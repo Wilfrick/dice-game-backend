@@ -2,7 +2,7 @@ package handshake
 
 import (
 	"HigherLevelPerudoServer/message_handlers"
-	"HigherLevelPerudoServer/message_handlers/player_management_handlers"
+	"HigherLevelPerudoServer/message_handlers/message_handler_interface"
 	"HigherLevelPerudoServer/util"
 	"testing"
 )
@@ -10,8 +10,8 @@ import (
 func Test_findAndInitialiseClientIDNewClient(t *testing.T) {
 	//SETUP
 	clientIDtoChannels := make(map[string]chan []byte)
-	unPH := player_management_handlers.UnassignedPlayerHandler{}
-	channelLocations := message_handlers.ChannelLocations{}
+	unPH := message_handlers.UnassignedPlayerHandler{}
+	channelLocations := message_handler_interface.ChannelLocations{}
 	//SETUP OVER
 	initial_clientID := " "
 	new_clientID, thisChan := findAndInitialiseClientID(initial_clientID, &clientIDtoChannels, &unPH, &channelLocations)
@@ -25,8 +25,8 @@ func Test_findAndInitialiseClientIDNewClient(t *testing.T) {
 func Test_findAndInitialiseClientIDOldClientInvalid(t *testing.T) {
 	//SETUP
 	clientIDtoChannels := make(map[string]chan []byte)
-	unPH := player_management_handlers.UnassignedPlayerHandler{}
-	channelLocations := message_handlers.ChannelLocations{}
+	unPH := message_handlers.UnassignedPlayerHandler{}
+	channelLocations := message_handler_interface.ChannelLocations{}
 	//SETUP OVER
 	initial_clientID := "arccoeuhtdco" // e.g. server restarted
 	new_clientID, thisChan := findAndInitialiseClientID(initial_clientID, &clientIDtoChannels, &unPH, &channelLocations)
@@ -44,8 +44,8 @@ func Test_findAndInitialiseClientIDPreviousClientID(t *testing.T) {
 	initial_clientID := "arccoeuhtdco"
 	clientIDtoChannels[initial_clientID] = thisChan
 	// unPH.UnassignedPlayers =
-	unPH := player_management_handlers.UnassignedPlayerHandler{UnassignedPlayers: []chan []byte{thisChan}}
-	channelLocations := message_handlers.ChannelLocations{thisChan: &unPH}
+	unPH := message_handlers.UnassignedPlayerHandler{UnassignedPlayers: []chan []byte{thisChan}}
+	channelLocations := message_handler_interface.ChannelLocations{thisChan: &unPH}
 	//SETUP OVER
 	// e.g. server restarted
 	new_clientID, new_thisChan := findAndInitialiseClientID(initial_clientID, &clientIDtoChannels, &unPH, &channelLocations)
@@ -65,8 +65,8 @@ func Test_findAndInitialiseClientIDFirstTimeThenAgain(t *testing.T) {
 	clientIDtoChannels := make(map[string]chan []byte)
 	initial_clientID := " "
 
-	unPH := player_management_handlers.UnassignedPlayerHandler{}
-	channelLocations := message_handlers.ChannelLocations{}
+	unPH := message_handlers.UnassignedPlayerHandler{}
+	channelLocations := message_handler_interface.ChannelLocations{}
 	//SETUP OVER
 	// e.g. server restarted
 	new_clientID, thisChan := findAndInitialiseClientID(initial_clientID, &clientIDtoChannels, &unPH, &channelLocations)

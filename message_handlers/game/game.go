@@ -1,32 +1,24 @@
 package game
 
 import (
-	"HigherLevelPerudoServer/message_handlers"
-
 	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"slices"
 )
 
 type GameState struct {
-	GameID                        string
-	PlayerHands                   []PlayerHand
-	CurrentPlayerIndex            int // should be < len(PlayerHands)
-	PlayerChannels                []chan []byte
-	PrevMove                      PlayerMove
-	GameInProgress                bool
-	AllowableChannelLock          int // should live with PlayerChannels, wherever that ends up
-	channelLocations              *message_handlers.ChannelLocations
-	PalacifoablePlayers           []bool
-	IsPalacifoRound               bool
-	GlobalUnassignedPlayerHandler message_handlers.MessageHandler
-}
-
-func (gameState *GameState) SetChannelLocations(channelLocations *message_handlers.ChannelLocations) {
-	gameState.channelLocations = channelLocations
+	GameID               string
+	PlayerHands          []PlayerHand
+	CurrentPlayerIndex   int // should be < len(PlayerHands)
+	PlayerChannels       []chan []byte
+	PrevMove             PlayerMove
+	GameInProgress       bool
+	AllowableChannelLock int // should live with PlayerChannels, wherever that ends up
+	// channelLocations              *message_handlers.ChannelLocations
+	PalacifoablePlayers []bool
+	IsPalacifoRound     bool
+	// GlobalUnassignedPlayerHandler message_handlers.MessageHandler
 }
 
 type GamesMap map[string]*GameState
@@ -192,87 +184,3 @@ func (gameState *GameState) updatePlayerIndex(moveType MoveType, optional_player
 }
 
 // broadcast message function, to used as: gameState.broadcast(message)
-
-func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thisChan chan []byte) {
-
-	// fmt.Println("Printing gamestate", gameState)
-	// not very efficient. Should work
-	fmt.Printf("Message recieved from websocket associated to player index %d \n", slices.Index(gameState.PlayerChannels, thisChan))
-	switch userMessage.TypeDescriptor {
-	case "PlayerMove":
-		fmt.Println("Made it into PlayerMove switch")
-		// If PlayerMove need to ensure that userMessage.Contents is of type PlayerMove
-
-		// could check here to make sure that this message is coming from the current player
-		// To do as such, we need a pairing from thisChan to playerIDs
-		// Then check equality against gameState.CurrentPlayerIndex
-		// thisChanIndex := slices.Index[[]chan []byte, chan []byte](gameState.PlayerChannels,thisChan)
-
-		thisChanIndex := slices.Index(gameState.PlayerChannels, thisChan)
-		if thisChanIndex != gameState.AllowableChannelLock {
-			thisChan <- messages.PackMessage("NOT YOUR TURN", nil)
-			return
-		}
-
-		var playerMove PlayerMove
-		// the below marshal and Unmarshal could be removed with a good understanding of the type of PlayerMove being sent
-		// Below may work but may also be a breaking change
-		// playerMove = PlayerMove{MoveType = userMessage.Contents.MoveType, Bet userMessage.Contents.Bet}
-
-		buff, err := json.Marshal(userMessage.Contents)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-		err = json.Unmarshal(buff, &playerMove)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-		fmt.Println("Calling gamestate.processPlayerMove")
-		couldProcessMove := gameState.ProcessPlayerMove(playerMove)
-		if !couldProcessMove {
-			thisChan <- messages.PackMessage("Could not process player move", nil)
-			return
-		}
-		fmt.Println("Finished gamestate.processPlayerMove")
-		// if !valid {
-		// 	gameState.PlayerChannels[gameState.CurrentPlayerIndex] <- packMessage("Invalid Bet", "Invalid Bet selection. Please select a valid move")
-		// 	return
-		// }
-		// move was valid, broadcast new state
-
-		// will need to let players know the result of updating the game state
-	case "LeaveGame":
-		fmt.Printf("Player %d tried to leave the game \n", slices.Index(gameState.PlayerChannels, thisChan))
-		playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/"}
-		message_handlers.Send(thisChan, playerLocationMessage)
-		gameState.MoveChannel(thisChan, gameState.GlobalUnassignedPlayerHandler)
-	case "ReturnAllToLobby":
-		fmt.Println("A player tried to return all to the lobby")
-		if gameState.GameInProgress {
-			fmt.Println("A player tried to return all players during the game")
-			thisChan <- messages.PackMessage("You cannot return all players to the lobby whilst the game is in progress", nil)
-			return
-		}
-		gameState
-	}
-
-}
-
-func (gameState *GameState) AddChannel(thisChan chan []byte) {
-	gameState.PlayerChannels = append(gameState.PlayerChannels, thisChan)
-	(*gameState.channelLocations)[thisChan] = gameState
-	playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/game"}
-	thisChan <- messages.CreateEncodedMessage(playerLocationMessage)
-}
-
-func (gameState *GameState) MoveChannel(thisChan chan []byte, newLocation message_handlers.MessageHandler) {
-	// thisChanIndex := slices.Index(gameState.PlayerChannels, thisChan)
-	// gameState.PlayerChannels = slices.Delete(gameState.PlayerChannels, thisChanIndex, thisChanIndex) // might need a +1 to make a valid slice
-	// if len(gameState.PlayerChannels) == 0 && message_handlers.MessageHandler(gameState) != *newLocation {
-	// 	delete((*allHandlers), gameState)
-	// }
-	// (*newLocation).AddChannel(thisChan, channelLocations)
-	message_handlers.MoveChannelLogic(&gameState.PlayerChannels, thisChan, newLocation, gameState.channelLocations)
-}

@@ -1,8 +1,7 @@
-package player_management_handlers
+package message_handlers
 
 import (
-	"HigherLevelPerudoServer/game"
-	"HigherLevelPerudoServer/message_handlers"
+	"HigherLevelPerudoServer/message_handlers/message_handler_interface"
 	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
 	"testing"
@@ -12,9 +11,10 @@ func Test_unPH(t *testing.T) {
 	unPH := UnassignedPlayerHandler{}
 	// lobbyChan := LobbyHandler{}
 	playerChan := make(chan []byte)
-	channelLocations := message_handlers.ChannelLocations{}
-	allHandlers := message_handlers.MessageHandlers{}
-	allHandlers[&unPH] = struct{}{}
+	util.ChanSink([]chan []byte{playerChan})
+	channelLocations := message_handler_interface.ChannelLocations{}
+	// allHandlers := message_handler_interface.MessageHandlers{} // moved away from this a while ago
+	// allHandlers[&unPH] = struct{}{}
 	unPH.SetChannelLocations(&channelLocations)
 	unPH.AddChannel(playerChan)
 	t.Log(unPH.UnassignedPlayers, playerChan)
@@ -29,7 +29,8 @@ func Test_newLocation(t *testing.T) {
 	unPH := UnassignedPlayerHandler{}
 	lobbyChan := LobbyHandler{}
 	playerChan := make(chan []byte)
-	channelLocations := message_handlers.ChannelLocations{}
+	util.ChanSink([]chan []byte{playerChan})
+	channelLocations := message_handler_interface.ChannelLocations{}
 	// allHandlers := message_handlers.MessageHandlers{}
 	// allHandlers[&unPH] = struct{}{}
 	// allHandlers[&lobbyChan] = struct{}{}
@@ -46,7 +47,7 @@ func Test_newLocation(t *testing.T) {
 }
 
 func Test_lobbyToGameLocation(t *testing.T) {
-	channelLocations := message_handlers.ChannelLocations{}
+	channelLocations := message_handler_interface.ChannelLocations{}
 	unPH := UnassignedPlayerHandler{}
 	unPH.SetChannelLocations(&channelLocations)
 	lobbyMap := make(map[string]*LobbyHandler)
@@ -54,9 +55,10 @@ func Test_lobbyToGameLocation(t *testing.T) {
 	lobbyChan := LobbyHandler{}
 	lobbyChan.GlobalUnassignedPlayerHandler = &unPH
 	lobbyChan.SetChannelLocations(&channelLocations)
-	gameState := game.GameState{}
-	gameState.SetChannelLocations(&channelLocations)
+	gameHandler := GameHandler{}
+	gameHandler.SetChannelLocations(&channelLocations)
 	playerChan := make(chan []byte)
+	util.ChanSink([]chan []byte{playerChan})
 
 	// allHandlers := message_handlers.MessageHandlers{}
 	// allHandlers[&gameState] = struct{}{}
@@ -66,10 +68,10 @@ func Test_lobbyToGameLocation(t *testing.T) {
 	util.Assert(t, lobbyChan.LobbyPlayerChannels[0] == playerChan)
 	util.Assert(t, len(lobbyChan.LobbyPlayerChannels) == 1)
 
-	lobbyChan.MoveChannel(playerChan, &gameState)
+	lobbyChan.MoveChannel(playerChan, &gameHandler)
 	util.Assert(t, len(lobbyChan.LobbyPlayerChannels) == 0)
-	util.Assert(t, len(gameState.PlayerChannels) == 1)
-	util.Assert(t, gameState.PlayerChannels[0] == playerChan)
+	util.Assert(t, len(gameHandler.gameState.PlayerChannels) == 1)
+	util.Assert(t, gameHandler.gameState.PlayerChannels[0] == playerChan)
 }
 
 func Test_createLobby(t *testing.T) {
@@ -77,7 +79,7 @@ func Test_createLobby(t *testing.T) {
 	util.ChanSink([]chan []byte{playerChan})
 	unPH := UnassignedPlayerHandler{UnassignedPlayers: []chan []byte{playerChan}}
 	msg := messages.Message{TypeDescriptor: "Create Lobby"}
-	channelLocations := message_handlers.ChannelLocations{}
+	channelLocations := message_handler_interface.ChannelLocations{}
 	lobbyMap := make(map[string]*LobbyHandler)
 	channelLocations[playerChan] = &unPH
 	// allHandlers := message_handlers.MessageHandlers{} // needed so tests compile atm, but will be removed in future
@@ -109,7 +111,7 @@ func Test_createGame(t *testing.T) {
 
 	lobby.GlobalUnassignedPlayerHandler = &unPH
 	msg := messages.Message{TypeDescriptor: "Start Game"}
-	channelLocations := message_handlers.ChannelLocations{}
+	channelLocations := message_handler_interface.ChannelLocations{}
 	channelLocations[playerChan] = &lobby
 	unPH.SetChannelLocations(&channelLocations)
 	unPH.LobbyMap = &lobbyMap
@@ -118,17 +120,17 @@ func Test_createGame(t *testing.T) {
 	lobby.SetChannelLocations(&channelLocations)
 	lobby.ProcessUserMessage(msg, playerChan)
 	// util.Assert(t, len(allHandlers) == 2)
-	gs, ok := channelLocations[playerChan]
+	gh, ok := channelLocations[playerChan]
 	t.Log(ok, lobby.LobbyPlayerChannels)
 	util.Assert(t, ok)
 	util.Assert(t, len(lobby.LobbyPlayerChannels) == 0)
-	cast_game, ok := gs.(*game.GameState)
+	cast_game_handler, ok := gh.(*GameHandler)
 	if !ok {
 		t.FailNow()
 	}
 	util.Assert(t, ok)
-	util.Assert(t, cast_game.PlayerChannels[0] == playerChan)
-	util.Assert(t, cast_game.GameID == "alex")
+	util.Assert(t, cast_game_handler.gameState.PlayerChannels[0] == playerChan)
+	util.Assert(t, cast_game_handler.gameState.GameID == "alex")
 }
 
 func Test_joiningLobbyWithHash(t *testing.T) {
@@ -141,7 +143,7 @@ func Test_joiningLobbyWithHash(t *testing.T) {
 	lobbyMap["alex"] = &lobby
 	unPH.LobbyMap = &lobbyMap
 	msg := messages.Message{TypeDescriptor: "Join Lobby", Contents: struct{ LobbyID string }{LobbyID: "alex"}}
-	channelLocations := message_handlers.ChannelLocations{}
+	channelLocations := message_handler_interface.ChannelLocations{}
 	unPH.SetChannelLocations(&channelLocations)
 	lobby.SetChannelLocations(&channelLocations)
 	channelLocations[playerChan] = &unPH
@@ -159,7 +161,7 @@ func Test_leavingLobby(t *testing.T) {
 	unPH := UnassignedPlayerHandler{}
 	lobby := LobbyHandler{LobbyID: "alex", LobbyPlayerChannels: []chan []byte{playerChan}}
 	lobby.GlobalUnassignedPlayerHandler = &unPH
-	channelLocations := message_handlers.ChannelLocations{}
+	channelLocations := message_handler_interface.ChannelLocations{}
 	channelLocations[playerChan] = &lobby
 	unPH.SetChannelLocations(&channelLocations)
 	lobby.SetChannelLocations(&channelLocations)
@@ -173,5 +175,5 @@ func Test_leavingLobby(t *testing.T) {
 
 	util.Assert(t, len(lobby.LobbyPlayerChannels) == 0)
 	util.Assert(t, len(unPH.UnassignedPlayers) == 1)
-	util.Assert(t, channelLocations[playerChan] == &unPH)
+	util.Assert(t, channelLocations[playerChan] == message_handler_interface.MessageHandler(&unPH))
 }

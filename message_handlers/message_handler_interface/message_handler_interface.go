@@ -1,4 +1,4 @@
-package message_handlers
+package message_handler_interface
 
 import (
 	"HigherLevelPerudoServer/messages"
