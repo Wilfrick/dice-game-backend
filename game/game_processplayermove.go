@@ -6,10 +6,18 @@ import (
 )
 
 func (gameState GameState) checkNewBetValid(newBet Bet) bool {
-	betIncreasing := newBet.isGreaterThan(gameState.PrevMove.Value)
 	betRejectedForOnesOnFirstTurn := gameState.PrevMove.MoveType != BET && newBet.FaceVal == 1
-	// betValid = true // ONLY For testing, not for production
-	return betIncreasing && !betRejectedForOnesOnFirstTurn
+	if !gameState.IsPalacifoRound {
+		betIncreasing := newBet.isGreaterThan(gameState.PrevMove.Value)
+		return betIncreasing && !betRejectedForOnesOnFirstTurn
+	}
+	betIncreasing := newBet.isGreaterThanPalacifo(gameState.PrevMove.Value)
+	if newBet.FaceVal != gameState.PrevMove.Value.FaceVal { // could be refactored maybe
+		currentPlayerCanChangeFaceVal := len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 1
+		return betIncreasing && currentPlayerCanChangeFaceVal
+	}
+
+	return betIncreasing
 }
 
 func (gameState GameState) broadcastPlayerMove(playerMove PlayerMove) {
@@ -132,6 +140,10 @@ func (gameState *GameState) processPlayerCalza() bool {
 	fmt.Println("Made into Case Calza")
 	//Input already valid
 	if gameState.PrevMove.MoveType != BET {
+		return false
+	}
+
+	if gameState.IsPalacifoRound {
 		return false
 	}
 	// Need to check that this is not the first move of a game
