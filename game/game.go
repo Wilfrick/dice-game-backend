@@ -2,6 +2,7 @@ package game
 
 import (
 	"HigherLevelPerudoServer/message_handlers"
+
 	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
 	"encoding/json"
@@ -11,16 +12,17 @@ import (
 )
 
 type GameState struct {
-	GameID               string
-	PlayerHands          []PlayerHand
-	CurrentPlayerIndex   int // should be < len(PlayerHands)
-	PlayerChannels       []chan []byte
-	PrevMove             PlayerMove
-	GameInProgress       bool
-	AllowableChannelLock int // should live with PlayerChannels, wherever that ends up
-	channelLocations     *message_handlers.ChannelLocations
-	PalacifoablePlayers  []bool
-	IsPalacifoRound      bool
+	GameID                        string
+	PlayerHands                   []PlayerHand
+	CurrentPlayerIndex            int // should be < len(PlayerHands)
+	PlayerChannels                []chan []byte
+	PrevMove                      PlayerMove
+	GameInProgress                bool
+	AllowableChannelLock          int // should live with PlayerChannels, wherever that ends up
+	channelLocations              *message_handlers.ChannelLocations
+	PalacifoablePlayers           []bool
+	IsPalacifoRound               bool
+	GlobalUnassignedPlayerHandler message_handlers.MessageHandler
 }
 
 func (gameState *GameState) SetChannelLocations(channelLocations *message_handlers.ChannelLocations) {
@@ -243,7 +245,9 @@ func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thi
 		// will need to let players know the result of updating the game state
 	case "LeaveGame":
 		fmt.Printf("Player %d tried to leave the game \n", slices.Index(gameState.PlayerChannels, thisChan))
-
+		playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/"}
+		message_handlers.Send(thisChan, playerLocationMessage)
+		gameState.MoveChannel(thisChan, gameState.GlobalUnassignedPlayerHandler)
 	case "ReturnAllToLobby":
 		fmt.Println("A player tried to return all to the lobby")
 		if gameState.GameInProgress {
@@ -251,6 +255,7 @@ func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thi
 			thisChan <- messages.PackMessage("You cannot return all players to the lobby whilst the game is in progress", nil)
 			return
 		}
+		gameState
 	}
 
 }
@@ -258,6 +263,8 @@ func (gameState *GameState) ProcessUserMessage(userMessage messages.Message, thi
 func (gameState *GameState) AddChannel(thisChan chan []byte) {
 	gameState.PlayerChannels = append(gameState.PlayerChannels, thisChan)
 	(*gameState.channelLocations)[thisChan] = gameState
+	playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/game"}
+	thisChan <- messages.CreateEncodedMessage(playerLocationMessage)
 }
 
 func (gameState *GameState) MoveChannel(thisChan chan []byte, newLocation message_handlers.MessageHandler) {

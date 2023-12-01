@@ -102,6 +102,11 @@ func (unPH *UnassignedPlayerHandler) ProcessUserMessage(msg messages.Message, th
 func (unPH *UnassignedPlayerHandler) AddChannel(thisChan chan []byte) {
 	unPH.UnassignedPlayers = append(unPH.UnassignedPlayers, thisChan)
 	(*unPH.channelLocations)[thisChan] = unPH
+	playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/"}
+	thisChan <- messages.CreateEncodedMessage(playerLocationMessage)
+}
+func (unPH UnassignedPlayerHandler) CreateNewLobby() LobbyHandler {
+	return LobbyHandler{}
 }
 
 func (unPH *UnassignedPlayerHandler) MoveChannel(thisChan chan []byte, newLocation message_handlers.MessageHandler) {
@@ -145,6 +150,7 @@ func (lobbyHandler *LobbyHandler) ProcessUserMessage(msg messages.Message, thisC
 		}
 		// give the game the correct ID
 		gameState.GameID = lobbyHandler.LobbyID
+		gameState.GlobalUnassignedPlayerHandler = lobbyHandler.GlobalUnassignedPlayerHandler
 
 		// update the channelLocations for these channels
 		delete(*lobbyHandler.GlobalUnassignedPlayerHandler.LobbyMap, lobbyHandler.LobbyID)
@@ -174,6 +180,8 @@ func (lobbyHandler *LobbyHandler) ProcessUserMessage(msg messages.Message, thisC
 func (lobbyHandler *LobbyHandler) AddChannel(thisChan chan []byte) {
 	lobbyHandler.LobbyPlayerChannels = append(lobbyHandler.LobbyPlayerChannels, thisChan)
 	(*lobbyHandler.channelLocations)[thisChan] = lobbyHandler
+	playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/lobby"}
+	thisChan <- messages.CreateEncodedMessage(playerLocationMessage)
 }
 
 func (lobbyHandler *LobbyHandler) MoveChannel(thisChan chan []byte, newLocation message_handlers.MessageHandler) {

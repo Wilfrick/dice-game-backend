@@ -77,7 +77,7 @@ func sendBytes(thisChan chan []byte, bytesContents []byte, optional_wait_group .
 
 }
 
-func send(thisChan chan []byte, message messages.Message, optional_wait_group ...*sync.WaitGroup) {
+func Send(thisChan chan []byte, message messages.Message, optional_wait_group ...*sync.WaitGroup) {
 	encodedMessage := messages.CreateEncodedMessage(message)
 	sendBytes(thisChan, encodedMessage, optional_wait_group...)
 }
