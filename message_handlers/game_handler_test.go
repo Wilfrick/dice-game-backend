@@ -157,11 +157,20 @@ func Test_singlePlayerLeavesGameInProgressWithOtherPlayer(t *testing.T) {
 	// Finished setup
 	msg := messages.Message{TypeDescriptor: "LeaveGame"}
 	go gh.ProcessUserMessage(msg, thisChan)
-	otherChansMessage := <-otherChan
-	target_msg := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerLeft", Contents: 0})
-	// fmt.Println(otherChansMessage)
-	// fmt.Println(target_msg)
-	util.Assert(t, slices.Equal(otherChansMessage, target_msg))
+
+	// The following messages are sent in a random order which isn't ideal:
+	otherChansMessage1 := <-otherChan
+	otherChansMessage2 := <-otherChan
+	expectedMessage1 := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "GameResult", Contents: game.GameResult{1, "win"}})
+	expectedMessage2 := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerLeft", Contents: 0})
+	if slices.Equal(otherChansMessage1, expectedMessage1) {
+		util.Assert(t, slices.Equal(otherChansMessage2, expectedMessage2))
+	} else if slices.Equal(otherChansMessage1, expectedMessage2) {
+		util.Assert(t, slices.Equal(otherChansMessage2, expectedMessage1))
+	} else {
+		t.Error("failed at the randomness")
+	}
+	t.Log(gh.gameState.PlayerChannels)
 	util.Assert(t, len(gh.gameState.PlayerChannels) == 1)
 	util.Assert(t, gh.gameState.PlayerChannels[0] == otherChan)
 	util.Assert(t, len(gh.gameState.PlayerHands) == 1)

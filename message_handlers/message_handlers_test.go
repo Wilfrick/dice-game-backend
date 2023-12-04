@@ -4,6 +4,7 @@ import (
 	"HigherLevelPerudoServer/message_handlers/message_handler_interface"
 	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
+	"slices"
 	"testing"
 )
 
@@ -176,4 +177,72 @@ func Test_leavingLobby(t *testing.T) {
 	util.Assert(t, len(lobby.LobbyPlayerChannels) == 0)
 	util.Assert(t, len(unPH.UnassignedPlayers) == 1)
 	util.Assert(t, channelLocations[playerChan] == message_handler_interface.MessageHandler(&unPH))
+}
+
+func Test_joiningQuickplay(t *testing.T) {
+	playerChan := make(chan []byte)
+	unPH := UnassignedPlayerHandler{UnassignedPlayers: []chan []byte{playerChan}}
+	quickplay_lobby := LobbyHandler{IsQuickplay: true}
+	quickplay_lobby.GlobalUnassignedPlayerHandler = &unPH
+	util.ChanSink([]chan []byte{playerChan})
+	lobbyMap := make(map[string]*LobbyHandler)
+	unPH.LobbyMap = &lobbyMap
+	unPH.currentQuickplayLobby = &quickplay_lobby
+	msg := messages.Message{TypeDescriptor: "JoinQuickplay"}
+	channelLocations := message_handler_interface.ChannelLocations{}
+	unPH.SetChannelLocations(&channelLocations)
+	quickplay_lobby.SetChannelLocations(&channelLocations)
+	channelLocations[playerChan] = &unPH
+	// util.Assert(t, len(channelLocations) == 1)
+	unPH.ProcessUserMessage(msg, playerChan)
+	util.Assert(t, len(unPH.UnassignedPlayers) == 0)
+	util.Assert(t, len(quickplay_lobby.LobbyPlayerChannels) == 1)
+	util.Assert(t, quickplay_lobby.LobbyPlayerChannels[0] == playerChan)
+	util.Assert(t, channelLocations[playerChan].(*LobbyHandler) == &quickplay_lobby)
+}
+
+func Test_joiningQuickplayCausingAGame(t *testing.T) {
+	waitingChans := util.InitialiseChans(make([]chan []byte, 3))
+	playerChan := make(chan []byte)
+	unPH := UnassignedPlayerHandler{UnassignedPlayers: []chan []byte{playerChan}}
+	quickplay_lobby := LobbyHandler{IsQuickplay: true, LobbyPlayerChannels: waitingChans}
+	quickplay_lobby.GlobalUnassignedPlayerHandler = &unPH
+	util.ChanSink(waitingChans)
+	util.ChanSink([]chan []byte{playerChan})
+	lobbyMap := make(map[string]*LobbyHandler)
+	unPH.LobbyMap = &lobbyMap
+	unPH.currentQuickplayLobby = &quickplay_lobby
+	msg := messages.Message{TypeDescriptor: "JoinQuickplay"}
+	channelLocations := message_handler_interface.ChannelLocations{}
+	unPH.SetChannelLocations(&channelLocations)
+	quickplay_lobby.SetChannelLocations(&channelLocations)
+	channelLocations[playerChan] = &unPH
+	for _, channel := range waitingChans {
+		channelLocations[channel] = &quickplay_lobby
+	}
+	// FINISHED SETUP
+
+	// util.Assert(t, len(channelLocations) == 1)
+	unPH.ProcessUserMessage(msg, playerChan)
+	util.Assert(t, len(unPH.UnassignedPlayers) == 0)
+	util.Assert(t, len(quickplay_lobby.LobbyPlayerChannels) == 0)
+	messageHandler, ok := channelLocations[playerChan]
+	if !ok {
+		t.Error("the player ended up without a location")
+	}
+	gameHandler, ok := messageHandler.(*GameHandler)
+	if !ok {
+		t.Error("the player ended up not belonging to a game")
+	}
+	util.Assert(t, len(gameHandler.gameState.PlayerChannels) == 4)
+	util.Assert(t, gameHandler.gameState.GameInProgress)
+	for _, channel := range waitingChans {
+		gh, ok := channelLocations[channel].(*GameHandler)
+		util.Assert(t, ok)
+		util.Assert(t, gh == gameHandler)
+		util.Assert(t, slices.Contains(gameHandler.gameState.PlayerChannels, channel))
+	}
+	new_quickplay_lobby := unPH.currentQuickplayLobby
+	util.Assert(t, new_quickplay_lobby.IsQuickplay)
+	util.Assert(t, len(new_quickplay_lobby.LobbyPlayerChannels) == 0)
 }

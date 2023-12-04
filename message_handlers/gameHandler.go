@@ -125,8 +125,8 @@ func (gameHandler *GameHandler) processLeaveGame(thisChan chan []byte) {
 		msg := messages.Message{TypeDescriptor: "PlayerLeft", Contents: thisChanIndex}
 		defer func() {
 			gameHandler.Broadcast(msg)
-			newCurrentPlayerIndex := messages.Message{TypeDescriptor: "RoundResult", Contents: game.RoundResult{PlayerIndex: gameHandler.gameState.CurrentPlayerIndex, Result: "next"}}
-			gameHandler.Broadcast(newCurrentPlayerIndex)
+			// newCurrentPlayerIndex := messages.Message{TypeDescriptor: "RoundResult", Contents: game.RoundResult{PlayerIndex: gameHandler.gameState.CurrentPlayerIndex, Result: "next"}}
+			// gameHandler.Broadcast(newCurrentPlayerIndex)
 		}()
 	}
 	message_handler_interface.Send(thisChan, playerLocationMessage)

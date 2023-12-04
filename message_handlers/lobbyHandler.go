@@ -12,43 +12,26 @@ type LobbyHandler struct {
 	LobbyID                       string
 	channelLocations              *message_handler_interface.ChannelLocations
 	GlobalUnassignedPlayerHandler *UnassignedPlayerHandler
+	IsQuickplay                   bool
 }
+
+const QUICKPLAY_LOBBY_SIZE int = 4
 
 func (lobbyHandler *LobbyHandler) ProcessUserMessage(msg messages.Message, thisChan chan []byte) {
 	// var _ game.GameState // wtf is this
 	switch msg.TypeDescriptor {
 	case "Start Game":
-		// Lots here mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-		// In some order
-		// Change the lobby to a game
-		// Update the location of the players
-		// Communicate this information. best handled here or in Game Handler
-
-		// create a new game (including setting channellocations)
-		gameHandler := GameHandler{}
-		gameHandler.SetChannelLocations(lobbyHandler.channelLocations)
-		// numPlayers := len(lobbyHandler.LobbyPlayerChannels)
-		// // add the players that are currently in this lobby to the game
-		// for _, playerChan := range lobbyHandler.LobbyPlayerChannels {
-		// 	lobbyHandler.MoveChannel(playerChan, &gameState)
-		// }
-		for remaining := len(lobbyHandler.LobbyPlayerChannels); remaining > 0; remaining = len(lobbyHandler.LobbyPlayerChannels) {
-			lobbyHandler.MoveChannel(lobbyHandler.LobbyPlayerChannels[remaining-1], &gameHandler)
+		if lobbyHandler.IsQuickplay {
+			fmt.Println("A player tried to start a new game")
+			msg := messages.Message{TypeDescriptor: "RejectBadMessage", Contents: "You can't force a quickplay game to start"}
+			thisChan <- messages.CreateEncodedMessage(msg)
+			return
 		}
-		// give the game the correct ID
-		gameHandler.gameState.GameID = lobbyHandler.LobbyID
-		gameHandler.GlobalUnassignedPlayerHandler = lobbyHandler.GlobalUnassignedPlayerHandler
+		lobbyHandler.StartGame()
 
-		// update the channelLocations for these channels
-		delete(*lobbyHandler.GlobalUnassignedPlayerHandler.LobbyMap, lobbyHandler.LobbyID)
-		// done
-		msg := messages.Message{TypeDescriptor: "Game Started", Contents: struct{ GameID string }{GameID: gameHandler.gameState.GameID}}
-		gameHandler.gameState.Broadcast(msg)
-
-		fmt.Println("Case: GameStart")
-		gameHandler.gameState.StartNewGame()
 	case "Leave Lobby":
 		fmt.Println("Player trying to leave lobby")
+
 		whichPlayer := slices.Index(lobbyHandler.LobbyPlayerChannels, thisChan)
 
 		lobbyHandler.MoveChannel(thisChan, lobbyHandler.GlobalUnassignedPlayerHandler)
@@ -64,11 +47,55 @@ func (lobbyHandler *LobbyHandler) ProcessUserMessage(msg messages.Message, thisC
 	}
 }
 
+func (lobbyHandler *LobbyHandler) StartGame() {
+	// Lots here mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+	// In some order
+	// Change the lobby to a game
+	// Update the location of the players
+	// Communicate this information. best handled here or in Game Handler
+
+	// create a new game (including setting channellocations)
+	gameHandler := GameHandler{}
+	gameHandler.SetChannelLocations(lobbyHandler.channelLocations)
+	// numPlayers := len(lobbyHandler.LobbyPlayerChannels)
+	// // add the players that are currently in this lobby to the game
+	// for _, playerChan := range lobbyHandler.LobbyPlayerChannels {
+	// 	lobbyHandler.MoveChannel(playerChan, &gameState)
+	// }
+	fmt.Println("Here is fine")
+	for remaining := len(lobbyHandler.LobbyPlayerChannels); remaining > 0; remaining = len(lobbyHandler.LobbyPlayerChannels) {
+		lobbyHandler.MoveChannel(lobbyHandler.LobbyPlayerChannels[remaining-1], &gameHandler)
+	}
+	// give the game the correct ID
+	gameHandler.gameState.GameID = lobbyHandler.LobbyID
+	gameHandler.GlobalUnassignedPlayerHandler = lobbyHandler.GlobalUnassignedPlayerHandler
+
+	// update the channelLocations for these channels
+	delete(*lobbyHandler.GlobalUnassignedPlayerHandler.LobbyMap, lobbyHandler.LobbyID)
+	// done
+	msg := messages.Message{TypeDescriptor: "Game Started", Contents: struct{ GameID string }{GameID: gameHandler.gameState.GameID}}
+	gameHandler.gameState.Broadcast(msg)
+
+	fmt.Println("Case: GameStart")
+	gameHandler.gameState.StartNewGame()
+}
+
 func (lobbyHandler *LobbyHandler) AddChannel(thisChan chan []byte) {
 	lobbyHandler.LobbyPlayerChannels = append(lobbyHandler.LobbyPlayerChannels, thisChan)
 	(*lobbyHandler.channelLocations)[thisChan] = lobbyHandler
-	playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/lobby"}
+	var lobbyNavigation string
+	if lobbyHandler.IsQuickplay {
+		lobbyNavigation = "/quickplay"
+	} else {
+		lobbyNavigation = "/lobby"
+	}
+	playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: lobbyNavigation}
 	thisChan <- messages.CreateEncodedMessage(playerLocationMessage)
+	if lobbyHandler.IsQuickplay && len(lobbyHandler.LobbyPlayerChannels) == QUICKPLAY_LOBBY_SIZE {
+		// defer lobbyHandler.GlobalUnassignedPlayerHandler.CreateNewQuickPlay()
+		fmt.Println("Commencing quickplay game")
+		lobbyHandler.StartGame()
+	}
 }
 
 func (lobbyHandler *LobbyHandler) MoveChannel(thisChan chan []byte, newLocation message_handler_interface.MessageHandler) {

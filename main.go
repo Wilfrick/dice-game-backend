@@ -113,6 +113,7 @@ func main() {
 	globalUnassignedPlayersHandler := message_handlers.UnassignedPlayerHandler{}
 	globalUnassignedPlayersHandler.LobbyMap = &globalLobbyMap
 	globalUnassignedPlayersHandler.SetChannelLocations(&channelLocations)
+	globalUnassignedPlayersHandler.CreateNewQuickPlay()
 	// activeHandlers[&globalUnassignedPlayersHandler] = struct{}{}
 	upgrader := websocket.Upgrader{}
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // less than Zero CORS security.

@@ -33,7 +33,9 @@ func (unPH *UnassignedPlayerHandler) ProcessUserMessage(msg messages.Message, th
 	// (*channelLocations)[thisChan] = &gs
 	switch msg.TypeDescriptor {
 
-	case "Quickplay":
+	case "JoinQuickplay":
+		fmt.Println("A player tried to join quickplay")
+		unPH.MoveChannel(thisChan, unPH.currentQuickplayLobby)
 		// do quickplay
 	case "Create Lobby":
 		// Generate a random hash
@@ -95,6 +97,14 @@ func (unPH *UnassignedPlayerHandler) ProcessUserMessage(msg messages.Message, th
 		// thisChan <- messages.CreateEncodedMessage(msg)
 
 	}
+}
+
+func (unPH *UnassignedPlayerHandler) CreateNewQuickPlay() {
+	quickplay_lobby := LobbyHandler{IsQuickplay: true, LobbyID: "QUICKPLAY"}
+	if len(unPH.currentQuickplayLobby.LobbyPlayerChannels) > 0 {
+		fmt.Println("Changed the quickplay lobby before emptying it")
+	}
+	unPH.currentQuickplayLobby = &quickplay_lobby
 }
 
 func (unPH *UnassignedPlayerHandler) AddChannel(thisChan chan []byte) {
