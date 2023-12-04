@@ -3,6 +3,7 @@ package game
 import (
 	"errors"
 	"fmt"
+	"slices"
 )
 
 func (gameState *GameState) removeDice(player_index int) (bool, error) {
@@ -47,5 +48,21 @@ func (gameState *GameState) findNextAlivePlayerInclusive() error {
 		}
 		playerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
 	}
+	return nil
+}
+
+func (gameState *GameState) removePlayer(playerIndex int) error {
+	if playerIndex > len(gameState.PlayerChannels) {
+		err := errors.New("attempted to remove a player lying beyond the channels")
+		return err
+	}
+	gameState.PlayerHands[playerIndex] = PlayerHand{}
+	if gameState.CurrentPlayerIndex == playerIndex {
+		err := gameState.findNextAlivePlayerInclusive()
+		if err != nil {
+			return err
+		}
+	}
+	gameState.PlayerHands = slices.Delete(gameState.PlayerHands, playerIndex, playerIndex+1)
 	return nil
 }
