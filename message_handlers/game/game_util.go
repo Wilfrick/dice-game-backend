@@ -51,7 +51,7 @@ func (gameState *GameState) findNextAlivePlayerInclusive() error {
 	return nil
 }
 
-func (gameState *GameState) removePlayer(playerIndex int) error {
+func (gameState *GameState) RemovePlayer(playerIndex int) error {
 	if playerIndex > len(gameState.PlayerChannels) {
 		err := errors.New("attempted to remove a player lying beyond the channels")
 		return err

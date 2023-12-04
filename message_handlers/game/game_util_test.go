@@ -71,7 +71,7 @@ func Test_removePlayer(t *testing.T) {
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{2}), PlayerHand([]int{5}), PlayerHand([]int{4, 5, 6})}
 	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.CurrentPlayerIndex = 0
-	err := gameState.removePlayer(1)
+	err := gameState.RemovePlayer(1)
 	if err != nil {
 		t.Error("Couldn't remove the player")
 	}
@@ -87,7 +87,7 @@ func Test_removePlayerInvalid(t *testing.T) {
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{2}), PlayerHand([]int{5}), PlayerHand([]int{4, 5, 6})}
 	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.CurrentPlayerIndex = 0
-	err := gameState.removePlayer(4)
+	err := gameState.RemovePlayer(4)
 	if err == nil {
 		t.Error("Allowed the removal of a nonexistent player")
 	}
@@ -99,7 +99,7 @@ func Test_removePlayerCurrentTurn(t *testing.T) {
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{2}), PlayerHand([]int{5}), PlayerHand([]int{4, 5, 6})}
 	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 4))
 	gameState.CurrentPlayerIndex = 0
-	err := gameState.removePlayer(0)
+	err := gameState.RemovePlayer(0)
 	if err != nil {
 		t.Fail()
 	}

@@ -87,10 +87,8 @@ func (gameHandler *GameHandler) ProcessUserMessage(userMessage messages.Message,
 
 		// will need to let players know the result of updating the game state
 	case "LeaveGame":
-		fmt.Printf("Player %d tried to leave the game \n", slices.Index[[]chan []byte](gameHandler.gameState.PlayerChannels, thisChan))
-		playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/"}
-		message_handler_interface.Send(thisChan, playerLocationMessage)
-		gameHandler.MoveChannel(thisChan, gameHandler.GlobalUnassignedPlayerHandler)
+		gameHandler.processLeaveGame(thisChan)
+
 	case "ReturnAllToLobby":
 		fmt.Println("A player tried to return all to the lobby")
 		if gameHandler.gameState.GameInProgress {
@@ -110,6 +108,22 @@ func (gameHandler *GameHandler) ProcessUserMessage(userMessage messages.Message,
 		msg := messages.Message{TypeDescriptor: "Lobby Join Accepted", Contents: lobbyJoinResponse}
 		new_lobby.Broadcast(msg)
 	}
+
+}
+
+func (gameHandler *GameHandler) processLeaveGame(thisChan chan []byte) {
+	fmt.Printf("Player %d tried to leave the game \n", slices.Index[[]chan []byte](gameHandler.gameState.PlayerChannels, thisChan))
+	playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/"}
+	if gameHandler.gameState.GameInProgress {
+		// If the game is in progress, remove the relevant player
+		thisChanIndex := slices.Index[[]chan []byte](gameHandler.gameState.PlayerChannels, thisChan)
+		gameHandler.gameState.RemovePlayer(thisChanIndex)
+		// Then once we have moved the channel, we should inform the other players that they have left
+		msg := messages.Message{TypeDescriptor: "PlayerLeft", Contents: thisChanIndex}
+		defer gameHandler.Broadcast(msg)
+	}
+	message_handler_interface.Send(thisChan, playerLocationMessage)
+	gameHandler.MoveChannel(thisChan, gameHandler.GlobalUnassignedPlayerHandler)
 
 }
 
