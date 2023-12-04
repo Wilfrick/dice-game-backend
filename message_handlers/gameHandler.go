@@ -130,3 +130,6 @@ func (gameHandler *GameHandler) processLeaveGame(thisChan chan []byte) {
 func (gameHandler GameHandler) Broadcast(message messages.Message, optional_use_wait_group ...bool) {
 	message_handler_interface.BroadcastLogic(gameHandler.gameState.PlayerChannels, message, optional_use_wait_group...)
 }
+func (gameHandler *GameHandler) RemoveChannel(thisChan chan []byte) {
+	gameHandler.processLeaveGame(thisChan)
+}

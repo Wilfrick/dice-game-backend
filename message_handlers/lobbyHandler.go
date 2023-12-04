@@ -90,3 +90,7 @@ func (lobbyHandler *LobbyHandler) SetChannelLocations(channelLocations *message_
 func (lobbyHandler LobbyHandler) Broadcast(message messages.Message, optional_use_wait_group ...bool) {
 	message_handler_interface.BroadcastLogic(lobbyHandler.LobbyPlayerChannels, message, optional_use_wait_group...)
 }
+
+func (lobbyHandler *LobbyHandler) RemoveChannel(thisChan chan []byte) {
+	message_handler_interface.RemoveChannelLogic(&lobbyHandler.LobbyPlayerChannels, thisChan, lobbyHandler.channelLocations)
+}

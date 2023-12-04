@@ -114,3 +114,6 @@ func (unPH *UnassignedPlayerHandler) SetChannelLocations(channelLocations *messa
 func (unPH UnassignedPlayerHandler) Broadcast(message messages.Message, optional_use_wait_group ...bool) {
 	message_handler_interface.BroadcastLogic(unPH.UnassignedPlayers, message, optional_use_wait_group...)
 }
+func (unPH *UnassignedPlayerHandler) RemoveChannel(thisChan chan []byte) {
+	message_handler_interface.RemoveChannelLogic(&unPH.UnassignedPlayers, thisChan, unPH.channelLocations)
+}

@@ -15,7 +15,12 @@ type MessageHandler interface {
 	Broadcast(message messages.Message, optional_wait_group ...bool)
 	AddChannel(thisChan chan []byte)
 	MoveChannel(thisChan chan []byte, newLocation MessageHandler)
+	RemoveChannel(thisChan chan []byte)
 	SetChannelLocations(*ChannelLocations) // A message handler exists in the scope of a channelLocation
+}
+
+func RemoveChannelLogic(sliceOfPlayerChannels *[]chan []byte, thisChan chan []byte, channelLocations *ChannelLocations) {
+	MoveChannelLogic(sliceOfPlayerChannels, thisChan, nil, channelLocations)
 }
 
 func MoveChannelLogic(sliceOfPlayerChannels *[]chan []byte, thisChan chan []byte, newLocation MessageHandler, channelLocations *ChannelLocations) {

@@ -16,7 +16,7 @@ import (
 func tidyConnection(thisChan chan []byte, thisClientID string, channelLocations *message_handler_interface.ChannelLocations, globalClientIDsToChannel *map[string]chan []byte) {
 	channelHandler := (*channelLocations)[thisChan]
 	if channelHandler != nil {
-		channelHandler.MoveChannel(thisChan, nil)
+		channelHandler.RemoveChannel(thisChan)
 	} else {
 		fmt.Println("Channel Handler was nil")
 	}
