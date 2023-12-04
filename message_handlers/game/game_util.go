@@ -1,6 +1,7 @@
 package game
 
 import (
+	"HigherLevelPerudoServer/messages"
 	"errors"
 	"fmt"
 	"slices"
@@ -63,6 +64,14 @@ func (gameState *GameState) RemovePlayer(playerIndex int) error {
 			return err
 		}
 	}
+	alivePlayerIndices := gameState.alivePlayerIndices()
+	if len(alivePlayerIndices) == 1 {
+		// Removing this player will trigger a victory
+		gameState.GameInProgress = false
+		victor := alivePlayerIndices[0]
+		gameState.send(victor, messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{victor, "win"}})
+	}
 	gameState.PlayerHands = slices.Delete(gameState.PlayerHands, playerIndex, playerIndex+1)
+
 	return nil
 }

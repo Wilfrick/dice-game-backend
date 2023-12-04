@@ -117,10 +117,17 @@ func (gameHandler *GameHandler) processLeaveGame(thisChan chan []byte) {
 	if gameHandler.gameState.GameInProgress {
 		// If the game is in progress, remove the relevant player
 		thisChanIndex := slices.Index[[]chan []byte](gameHandler.gameState.PlayerChannels, thisChan)
+		// currentPlayerQuit := thisChanIndex == gameHandler.gameState.CurrentPlayerIndex
 		gameHandler.gameState.RemovePlayer(thisChanIndex)
+
 		// Then once we have moved the channel, we should inform the other players that they have left
+		// and potentially update the CurrentPlayerIndex clientside.
 		msg := messages.Message{TypeDescriptor: "PlayerLeft", Contents: thisChanIndex}
-		defer gameHandler.Broadcast(msg)
+		defer func() {
+			gameHandler.Broadcast(msg)
+			newCurrentPlayerIndex := messages.Message{TypeDescriptor: "RoundResult", Contents: game.RoundResult{PlayerIndex: gameHandler.gameState.CurrentPlayerIndex, Result: "next"}}
+			gameHandler.Broadcast(newCurrentPlayerIndex)
+		}()
 	}
 	message_handler_interface.Send(thisChan, playerLocationMessage)
 	gameHandler.MoveChannel(thisChan, gameHandler.GlobalUnassignedPlayerHandler)

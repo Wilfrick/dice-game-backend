@@ -1,6 +1,7 @@
 package game
 
 import (
+	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
 	"slices"
 	"testing"
@@ -107,4 +108,23 @@ func Test_removePlayerCurrentTurn(t *testing.T) {
 	// util.Assert(t, len(gameState.PlayerChannels) == 2)
 	util.Assert(t, len(gameState.PlayerHands) == 2)
 	util.Assert(t, slices.Equal(gameState.PlayerHands[0], PlayerHand([]int{5})) && slices.Equal(gameState.PlayerHands[1], PlayerHand([]int{4, 5, 6})))
+}
+
+// This test can't be well administered at the game level
+// see game_util for discussion
+
+func Test_removePlayerCausingVictory(t *testing.T) {
+	var gameState GameState
+	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{2}), PlayerHand([]int{5})}
+	thisChan := make(chan []byte)
+	otherChan := make(chan []byte)
+	util.ChanSink([]chan []byte{thisChan})
+	gameState.PlayerChannels = []chan []byte{thisChan, otherChan}
+	gameState.CurrentPlayerIndex = 1
+	gameState.GameInProgress = true
+	go gameState.RemovePlayer(0)
+	winningResult := <-otherChan
+	expectedMessage := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{1, "win"}})
+	util.Assert(t, gameState.GameInProgress == false)
+	util.Assert(t, slices.Equal(winningResult, expectedMessage))
 }
