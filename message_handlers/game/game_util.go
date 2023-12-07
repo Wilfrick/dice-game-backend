@@ -53,7 +53,7 @@ func (gameState *GameState) findNextAlivePlayerInclusive() error {
 }
 
 func (gameState *GameState) RemovePlayer(playerIndex int) error {
-	if playerIndex > len(gameState.PlayerChannels) {
+	if playerIndex >= len(gameState.PlayerChannels) {
 		err := errors.New("attempted to remove a player lying beyond the channels")
 		return err
 	}
@@ -66,7 +66,6 @@ func (gameState *GameState) RemovePlayer(playerIndex int) error {
 	}
 	alivePlayerIndices := gameState.alivePlayerIndices()
 	if len(alivePlayerIndices) == 1 {
-		// Removing this player will trigger a victory
 		gameState.GameInProgress = false
 		victor := alivePlayerIndices[0]
 		gameState.send(victor, messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{victor, "win"}})

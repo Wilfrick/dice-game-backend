@@ -35,9 +35,6 @@ func MoveChannelLogic(sliceOfPlayerChannels *[]chan []byte, thisChan chan []byte
 		// }
 		return
 	}
-	// if len(*sliceOfPlayerChannels) == 0 && thisHandler != newLocation {
-	// 	// delete((*allHandlers), thisHandler)
-	// }
 	(newLocation).AddChannel(thisChan)
 }
 

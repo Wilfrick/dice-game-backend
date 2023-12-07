@@ -91,6 +91,11 @@ func (lobbyHandler *LobbyHandler) AddChannel(thisChan chan []byte) {
 	}
 	playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: lobbyNavigation}
 	thisChan <- messages.CreateEncodedMessage(playerLocationMessage)
+	// Tell everyone new lobby player count
+	numLobbyPlayers := len(lobbyHandler.LobbyPlayerChannels)
+	lobbyJoinResponse := LobbyJoinResponse{userReadableResponse: "Successfully joined lobby with given ID", LobbyID: lobbyHandler.LobbyID, NumPlayers: numLobbyPlayers}
+	msg := messages.Message{TypeDescriptor: "Lobby Join Accepted", Contents: lobbyJoinResponse}
+	lobbyHandler.Broadcast(msg)
 	if lobbyHandler.IsQuickplay && len(lobbyHandler.LobbyPlayerChannels) == QUICKPLAY_LOBBY_SIZE {
 		// defer lobbyHandler.GlobalUnassignedPlayerHandler.CreateNewQuickPlay()
 		fmt.Println("Commencing quickplay game")

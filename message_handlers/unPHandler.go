@@ -52,9 +52,9 @@ func (unPH *UnassignedPlayerHandler) ProcessUserMessage(msg messages.Message, th
 		newLobby.SetChannelLocations(unPH.channelLocations)
 		(*unPH.LobbyMap)[lobbyID] = &newLobby // this possibly overwrites a previous lobby with the same hash, but hopefully hashes will never be the same
 		// (*allHandlers)[&newLobby] = struct{}{} // removed as we are moving away from allHandlers
-		lobbyJoinResponse := LobbyJoinResponse{userReadableResponse: "Successfully joined lobby with given ID", LobbyID: lobbyID, NumPlayers: 1}
-		msg = messages.Message{TypeDescriptor: "Lobby Join Accepted", Contents: lobbyJoinResponse}
-		thisChan <- messages.CreateEncodedMessage(msg)
+		// lobbyJoinResponse := LobbyJoinResponse{userReadableResponse: "Successfully joined lobby with given ID", LobbyID: lobbyID, NumPlayers: 1}
+		// msg = messages.Message{TypeDescriptor: "Lobby Join Accepted", Contents: lobbyJoinResponse}
+		// thisChan <- messages.CreateEncodedMessage(msg)
 		unPH.MoveChannel(thisChan, &newLobby)
 
 		// thisChan <- messages.PackMessage("Lobby Created", CreatedLobby{LobbyID: hash}) // replace with Joined Lobby (or similar)
@@ -84,27 +84,18 @@ func (unPH *UnassignedPlayerHandler) ProcessUserMessage(msg messages.Message, th
 			return
 		}
 		unPH.MoveChannel(thisChan, lobby)
-		numLobbyPlayers := len(lobby.LobbyPlayerChannels)
-		lobbyJoinResponse := LobbyJoinResponse{userReadableResponse: "Successfully joined lobby with given ID", LobbyID: lobbyID, NumPlayers: numLobbyPlayers}
-		msg = messages.Message{TypeDescriptor: "Lobby Join Accepted", Contents: lobbyJoinResponse}
-
-		// encoded_msg := messages.CreateEncodedMessage(msg) // this should really be lobby.Broadcast, probably using a go routine
-		lobby.Broadcast(msg)
-		// for _, lobbyChan := range lobby.LobbyPlayerChannels {
-		// 	lobbyChan <- encoded_msg
-		// }
-
-		// thisChan <- messages.CreateEncodedMessage(msg)
-
 	}
 }
 
 func (unPH *UnassignedPlayerHandler) CreateNewQuickPlay() {
 	quickplay_lobby := LobbyHandler{IsQuickplay: true, LobbyID: "QUICKPLAY"}
+	quickplay_lobby.SetChannelLocations(unPH.channelLocations)
+	quickplay_lobby.GlobalUnassignedPlayerHandler = unPH
 	// if len(unPH.currentQuickplayLobby.LobbyPlayerChannels) > 0 {
 	// 	fmt.Println("Changed the quickplay lobby before emptying it")
 	// }
 	unPH.currentQuickplayLobby = &quickplay_lobby
+
 }
 
 func (unPH *UnassignedPlayerHandler) AddChannel(thisChan chan []byte) {
