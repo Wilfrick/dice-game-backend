@@ -101,9 +101,9 @@ func (unPH *UnassignedPlayerHandler) ProcessUserMessage(msg messages.Message, th
 
 func (unPH *UnassignedPlayerHandler) CreateNewQuickPlay() {
 	quickplay_lobby := LobbyHandler{IsQuickplay: true, LobbyID: "QUICKPLAY"}
-	if len(unPH.currentQuickplayLobby.LobbyPlayerChannels) > 0 {
-		fmt.Println("Changed the quickplay lobby before emptying it")
-	}
+	// if len(unPH.currentQuickplayLobby.LobbyPlayerChannels) > 0 {
+	// 	fmt.Println("Changed the quickplay lobby before emptying it")
+	// }
 	unPH.currentQuickplayLobby = &quickplay_lobby
 }
 
