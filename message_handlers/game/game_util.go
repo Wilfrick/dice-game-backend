@@ -1,8 +1,10 @@
 package game
 
 import (
+	"HigherLevelPerudoServer/messages"
 	"errors"
 	"fmt"
+	"slices"
 )
 
 func (gameState *GameState) removeDice(player_index int) (bool, error) {
@@ -47,5 +49,28 @@ func (gameState *GameState) findNextAlivePlayerInclusive() error {
 		}
 		playerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
 	}
+	return nil
+}
+
+func (gameState *GameState) RemovePlayer(playerIndex int) error {
+	if playerIndex >= len(gameState.PlayerChannels) {
+		err := errors.New("attempted to remove a player lying beyond the channels")
+		return err
+	}
+	gameState.PlayerHands[playerIndex] = PlayerHand{}
+	if gameState.CurrentPlayerIndex == playerIndex {
+		err := gameState.findNextAlivePlayerInclusive()
+		if err != nil {
+			return err
+		}
+	}
+	alivePlayerIndices := gameState.alivePlayerIndices()
+	if len(alivePlayerIndices) == 1 {
+		gameState.GameInProgress = false
+		victor := alivePlayerIndices[0]
+		gameState.send(victor, messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{victor, "win"}})
+	}
+	gameState.PlayerHands = slices.Delete(gameState.PlayerHands, playerIndex, playerIndex+1)
+
 	return nil
 }

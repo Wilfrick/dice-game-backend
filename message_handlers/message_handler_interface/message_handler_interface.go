@@ -1,4 +1,4 @@
-package message_handlers
+package message_handler_interface
 
 import (
 	"HigherLevelPerudoServer/messages"
@@ -15,7 +15,12 @@ type MessageHandler interface {
 	Broadcast(message messages.Message, optional_wait_group ...bool)
 	AddChannel(thisChan chan []byte)
 	MoveChannel(thisChan chan []byte, newLocation MessageHandler)
+	RemoveChannel(thisChan chan []byte)
 	SetChannelLocations(*ChannelLocations) // A message handler exists in the scope of a channelLocation
+}
+
+func RemoveChannelLogic(sliceOfPlayerChannels *[]chan []byte, thisChan chan []byte, channelLocations *ChannelLocations) {
+	MoveChannelLogic(sliceOfPlayerChannels, thisChan, nil, channelLocations)
 }
 
 func MoveChannelLogic(sliceOfPlayerChannels *[]chan []byte, thisChan chan []byte, newLocation MessageHandler, channelLocations *ChannelLocations) {
@@ -30,9 +35,6 @@ func MoveChannelLogic(sliceOfPlayerChannels *[]chan []byte, thisChan chan []byte
 		// }
 		return
 	}
-	// if len(*sliceOfPlayerChannels) == 0 && thisHandler != newLocation {
-	// 	// delete((*allHandlers), thisHandler)
-	// }
 	(newLocation).AddChannel(thisChan)
 }
 
@@ -77,7 +79,7 @@ func sendBytes(thisChan chan []byte, bytesContents []byte, optional_wait_group .
 
 }
 
-func send(thisChan chan []byte, message messages.Message, optional_wait_group ...*sync.WaitGroup) {
+func Send(thisChan chan []byte, message messages.Message, optional_wait_group ...*sync.WaitGroup) {
 	encodedMessage := messages.CreateEncodedMessage(message)
 	sendBytes(thisChan, encodedMessage, optional_wait_group...)
 }

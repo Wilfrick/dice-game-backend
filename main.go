@@ -3,7 +3,7 @@ package main
 import (
 	"HigherLevelPerudoServer/handshake"
 	"HigherLevelPerudoServer/message_handlers"
-	"HigherLevelPerudoServer/message_handlers/player_management_handlers"
+	"HigherLevelPerudoServer/message_handlers/message_handler_interface"
 	"HigherLevelPerudoServer/messages"
 	"HigherLevelPerudoServer/util"
 	"encoding/json"
@@ -13,14 +13,20 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func tidyConnection(thisChan chan []byte, thisClientID string, channelLocations *message_handlers.ChannelLocations, globalClientIDsToChannel *map[string]chan []byte) {
-	(*channelLocations)[thisChan].MoveChannel(thisChan, nil)
+func tidyConnection(thisChan chan []byte, thisClientID string, channelLocations *message_handler_interface.ChannelLocations, globalClientIDsToChannel *map[string]chan []byte) {
+	channelHandler := (*channelLocations)[thisChan]
+	if channelHandler != nil {
+		channelHandler.RemoveChannel(thisChan)
+	} else {
+		fmt.Println("Channel Handler was nil")
+	}
+	// (*channelLocations)[thisChan].MoveChannel(thisChan, nil)
 	delete(*channelLocations, thisChan)
 	delete(*globalClientIDsToChannel, thisClientID)
 }
 
-func manageWsConn(ws *websocket.Conn, thisChan chan []byte, thisClientID string, channelLocations *message_handlers.ChannelLocations,
-	globalUnassignedPlayersHandler *player_management_handlers.UnassignedPlayerHandler, globalClientIDsToChannel *map[string]chan []byte) {
+func manageWsConn(ws *websocket.Conn, thisChan chan []byte, thisClientID string, channelLocations *message_handler_interface.ChannelLocations,
+	globalUnassignedPlayersHandler *message_handlers.UnassignedPlayerHandler, globalClientIDsToChannel *map[string]chan []byte) {
 
 	externalData := make(chan []byte)
 	go func() {
@@ -101,12 +107,13 @@ func manageWsConn(ws *websocket.Conn, thisChan chan []byte, thisClientID string,
 
 func main() {
 	// connectionChannels := make(map[chan []byte]int)
-	channelLocations := message_handlers.ChannelLocations{}
+	channelLocations := message_handler_interface.ChannelLocations{}
 	globalClientIDToChannels := make(map[string]chan []byte)
-	globalLobbyMap := make(map[string]*player_management_handlers.LobbyHandler)
-	globalUnassignedPlayersHandler := player_management_handlers.UnassignedPlayerHandler{}
+	globalLobbyMap := make(map[string]*message_handlers.LobbyHandler)
+	globalUnassignedPlayersHandler := message_handlers.UnassignedPlayerHandler{}
 	globalUnassignedPlayersHandler.LobbyMap = &globalLobbyMap
 	globalUnassignedPlayersHandler.SetChannelLocations(&channelLocations)
+	globalUnassignedPlayersHandler.CreateNewQuickPlay()
 	// activeHandlers[&globalUnassignedPlayersHandler] = struct{}{}
 	upgrader := websocket.Upgrader{}
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true } // less than Zero CORS security.

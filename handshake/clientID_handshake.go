@@ -2,7 +2,7 @@ package handshake
 
 import (
 	"HigherLevelPerudoServer/message_handlers"
-	"HigherLevelPerudoServer/message_handlers/player_management_handlers"
+	"HigherLevelPerudoServer/message_handlers/message_handler_interface"
 	"fmt"
 	"math/rand"
 
@@ -35,7 +35,7 @@ func generate_new_client_ID(globalClientIDToChannels map[string]chan []byte) str
 }
 
 func findAndInitialiseClientID(clientID string, globalClientIDToChannels *map[string]chan []byte,
-	globalUnassignedPlayersHandler *player_management_handlers.UnassignedPlayerHandler, channelLocations *message_handlers.ChannelLocations) (string, chan []byte) {
+	globalUnassignedPlayersHandler *message_handlers.UnassignedPlayerHandler, channelLocations *message_handler_interface.ChannelLocations) (string, chan []byte) {
 	thisChan, ok := (*globalClientIDToChannels)[clientID]
 	if !ok {
 		// This is a new ClientID and so we want to give the client a new ID
@@ -50,7 +50,7 @@ func findAndInitialiseClientID(clientID string, globalClientIDToChannels *map[st
 }
 
 func HandleClientHandshake(ws *websocket.Conn, globalClientIDToChannels *map[string]chan []byte,
-	globalUnassignedPlayersHandler *player_management_handlers.UnassignedPlayerHandler, channelLocations *message_handlers.ChannelLocations) (chan []byte, string) {
+	globalUnassignedPlayersHandler *message_handlers.UnassignedPlayerHandler, channelLocations *message_handler_interface.ChannelLocations) (chan []byte, string) {
 	// buff := make([]byte, 1024)
 	_, buff, err := ws.ReadMessage()
 	if err != nil {
