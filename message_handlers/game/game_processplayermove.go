@@ -6,13 +6,13 @@ import (
 )
 
 func (gameState GameState) checkNewBetValid(newBet Bet) bool {
-	betRejectedForOnesOnFirstTurn := gameState.PrevMove.MoveType != BET && newBet.FaceVal == 1
+	betRejectedForOnesOnFirstTurn := (gameState.PrevMove()).MoveType != BET && newBet.FaceVal == 1
 	if !gameState.IsPalacifoRound {
-		betIncreasing := newBet.isGreaterThan(gameState.PrevMove.Value)
+		betIncreasing := newBet.isGreaterThan(gameState.PrevMove().Value)
 		return betIncreasing && !betRejectedForOnesOnFirstTurn
 	}
-	betIncreasing := newBet.isGreaterThanPalacifo(gameState.PrevMove.Value)
-	if newBet.FaceVal != gameState.PrevMove.Value.FaceVal { // could be refactored maybe
+	betIncreasing := newBet.isGreaterThanPalacifo(gameState.PrevMove().Value)
+	if newBet.FaceVal != (gameState.PrevMove()).Value.FaceVal { // could be refactored maybe
 		currentPlayerCanChangeFaceVal := len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 1
 		return betIncreasing && currentPlayerCanChangeFaceVal
 	}
@@ -45,7 +45,7 @@ func (gameState *GameState) processPlayerBet(playerMove PlayerMove) bool {
 
 	gameState.broadcastPlayerMove(playerMove)
 
-	gameState.PrevMove = playerMove
+	// gameState.PrevMove() = playerMove // Previously updated PrevMove
 
 	// Update current player
 	err := gameState.updatePlayerIndex(BET)
@@ -98,12 +98,12 @@ func (gameState *GameState) updatePlayerIndexFinalBet(dice_change_player_index, 
 func (gameState *GameState) processPlayerDudo() bool {
 	fmt.Println("in ProcessPlayerMove, made into case 'Dudo' ")
 
-	if gameState.PrevMove.MoveType != BET { // could condition on PrevMove.Value as well if we wanted
+	if gameState.PrevMove().MoveType != BET { // could condition on PrevMove().Value as well if we wanted
 		return false
 	}
 
 	// dudo should always be valid, as long as the current player // checked earlier
-	gameState.broadcastPlayerMove(PlayerMove{MoveType: DUDO})
+	gameState.broadcastPlayerMove(PlayerMove{MoveType: DUDO, PlayerIndex: gameState.CurrentPlayerIndex})
 	gameState.revealHands()
 	// calculate the result of the call:
 	// 1) who loses a dice (always happens)
@@ -139,7 +139,7 @@ func (gameState *GameState) processPlayerDudo() bool {
 func (gameState *GameState) processPlayerCalza() bool {
 	fmt.Println("Made into Case Calza")
 	//Input already valid
-	if gameState.PrevMove.MoveType != BET {
+	if gameState.PrevMove().MoveType != BET {
 		return false
 	}
 
@@ -152,7 +152,7 @@ func (gameState *GameState) processPlayerCalza() bool {
 		// We do not allow Calza with only 2 live players
 		return false
 	}
-	gameState.broadcastPlayerMove(PlayerMove{MoveType: CALZA})
+	gameState.broadcastPlayerMove(PlayerMove{MoveType: CALZA, PlayerIndex: gameState.CurrentPlayerIndex})
 	gameState.revealHands()
 	bet_true := gameState.isBetExactlyTrue()
 	// Not sure if the following code deserves a function
@@ -198,41 +198,4 @@ func (gameState *GameState) processPlayerCalza() bool {
 	gameState.startNewRound()
 	return true
 
-	// var dice_total_changing_player_index int
-	// var candidate_victor int
-	// previousAlivePlayer, err := gameState.PreviousAlivePlayer()
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	return false
-	// }
-	// if bet_true {
-	// 	dice_total_changing_player_index = previousAlivePlayer
-	// 	candidate_victor = gameState.CurrentPlayerIndex
-	// } else {
-	// 	dice_total_changing_player_index = gameState.CurrentPlayerIndex
-	// 	candidate_victor = previousAlivePlayer
-	// }
-	// gameState.broadcast(messages.Message{"RoundResult", RoundResult{dice_total_changing_player_index, "dec"}})
-	// player_died, err := gameState.removeDice(dice_total_changing_player_index)
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	return false
-	// }
-	// if player_died {
-	// 	gameState.broadcast(messages.Message{"RoundResult", RoundResult{dice_total_changing_player_index, "lose"}})
-	// 	gameState.send(dice_total_changing_player_index, messages.Message{"GameResult", GameResult{dice_total_changing_player_index, "lose"}})
-	// 	if gameState.checkPlayerWin(candidate_victor) {
-	// 		gameState.broadcast(messages.Message{"GameResult", GameResult{candidate_victor, "win"}})
-	// 		gameState.GameInProgress = false
-	// 		fmt.Println("A player has won and the game is no longer in progress")
-	// 		return true
-	// 	}
-	// }
-	// err = gameState.updatePlayerIndex(CALZA, dice_total_changing_player_index)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return false
-	// }
-	// gameState.startNewRound()
-	// return true
 }

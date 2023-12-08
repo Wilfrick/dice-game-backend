@@ -38,19 +38,30 @@ func (gameState *GameState) randomiseCurrentHands() {
 }
 
 func (gameState *GameState) findNextAlivePlayerInclusive() error {
-	startingIndex := gameState.CurrentPlayerIndex
-
-	playerDead := len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0 && gameState.PlayerChannels[startingIndex] != nil
-	for playerDead {
-		gameState.CurrentPlayerIndex += 1
-		gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
-		if gameState.CurrentPlayerIndex == startingIndex {
-			err := errors.New("passed a game that has already been won")
-			return err
-		}
-		playerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0 && gameState.PlayerChannels[gameState.CurrentPlayerIndex] != nil
+	// startingIndex := gameState.CurrentPlayerIndex
+	alivePlayerIndices := gameState.alivePlayerIndices()
+	if len(alivePlayerIndices) < 1 {
+		err := errors.New("passed a game that has already been won")
+		return err
 	}
+	indexInAlivePlayerIndices, found := slices.BinarySearch(alivePlayerIndices, gameState.CurrentPlayerIndex)
+	if found {
+		return nil
+	}
+	fmt.Println(indexInAlivePlayerIndices, alivePlayerIndices)
+	gameState.CurrentPlayerIndex = alivePlayerIndices[(indexInAlivePlayerIndices)%len(alivePlayerIndices)]
 	return nil
+	// playerDead := len(gameState.PlayerHands[startingIndex]) == 0 && slices.Index(alivePlayerIndices, startingIndex) != -1
+	// for playerDead {
+	// 	gameState.CurrentPlayerIndex += 1
+	// 	gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
+	// 	if gameState.CurrentPlayerIndex == startingIndex {
+	// 		err := errors.New("passed a game that has already been won")
+	// 		return err
+	// 	}
+	// 	playerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0 && slices.Index(alivePlayerIndices, gameState.CurrentPlayerIndex) != -1
+	// }
+	// return nil
 }
 
 func (gameState *GameState) RemovePlayer(playerIndex int) error {

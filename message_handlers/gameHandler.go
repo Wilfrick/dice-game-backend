@@ -72,6 +72,7 @@ func (gameHandler *GameHandler) ProcessUserMessage(userMessage messages.Message,
 			fmt.Println(err.Error())
 			return
 		}
+		playerMove.PlayerIndex = thisChanIndex
 		fmt.Println("Calling gamestate.processPlayerMove")
 		couldProcessMove := gameHandler.gameState.ProcessPlayerMove(playerMove)
 		if !couldProcessMove {

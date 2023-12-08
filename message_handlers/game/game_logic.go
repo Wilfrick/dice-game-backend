@@ -14,13 +14,13 @@ func (gameState GameState) PlayersAllDead() bool {
 			hand_sums = false
 		}
 	}
-	return hand_sums
+	return hand_sums // should be len(gameState.alivePlayerIndices)>0
 }
 
 func (gameState GameState) isBetTrue() bool {
 	fmt.Println("Called isBetTrue")
 	// TODO, for Dudo
-	bet := gameState.PrevMove.Value
+	bet := gameState.PrevMove().Value
 	var dice_face_counts []int
 	if !gameState.IsPalacifoRound {
 		dice_face_counts = count_dice_faces_considering_wild_ones(gameState)
@@ -34,7 +34,7 @@ func (gameState GameState) isBetTrue() bool {
 func (gameState GameState) isBetExactlyTrue() bool {
 	fmt.Println("Called isBetExactlyTrue")
 	// TODO, for Calza
-	bet := gameState.PrevMove.Value
+	bet := gameState.PrevMove().Value
 	dice_face_counts := count_dice_faces_considering_wild_ones(gameState)
 
 	return dice_face_counts[bet.FaceVal] == bet.NumDice
@@ -95,4 +95,12 @@ func (gameState GameState) PreviousAlivePlayer() (int, error) {
 func (gameState GameState) checkPlayerWin(candidate_victor int) bool {
 	alivePlayers := gameState.alivePlayerIndices()
 	return len(alivePlayers) == 1 && alivePlayers[0] == candidate_victor
+}
+
+func (gameState GameState) PrevMove() PlayerMove {
+	if len(gameState.RoundMoveHistory) == 0 {
+		return PlayerMove{}
+	}
+	return gameState.RoundMoveHistory[len(gameState.RoundMoveHistory)-1]
+
 }

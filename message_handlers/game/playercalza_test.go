@@ -15,7 +15,7 @@ func xTest_processPlayerMoveCalzaTrue(t *testing.T) {
 			<-gs.PlayerChannels[1]
 		}
 	}()
-	gs.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{5, 2}}
+	gs.RoundMoveHistory = []PlayerMove{{MoveType: "Bet", Value: Bet{5, 2}}}
 	gs.CurrentPlayerIndex = 1
 	playerMove := PlayerMove{MoveType: "Calza"} // True
 	validity := gs.ProcessPlayerMove(playerMove)
@@ -38,7 +38,7 @@ func xTest_processPlayerMoveCalzaFalse(t *testing.T) {
 			<-gs.PlayerChannels[1]
 		}
 	}()
-	gs.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{5, 2}}
+	gs.RoundMoveHistory = []PlayerMove{{MoveType: "Bet", Value: Bet{5, 2}}}
 	gs.CurrentPlayerIndex = 1
 	playerMove := PlayerMove{MoveType: "Calza"} // False only 4 2's
 	validity := gs.ProcessPlayerMove(playerMove)

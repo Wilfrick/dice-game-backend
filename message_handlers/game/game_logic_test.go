@@ -112,3 +112,15 @@ func Test_previousAlivePlayerOneDeadSkipEnd(t *testing.T) {
 	util.Assert(t, previousAlivePlayer == 1)
 
 }
+
+func Test_alivePlayerIndicesInactivePlayers(t *testing.T) { // Jim
+	var gs GameState
+	gs.PlayerHands = []PlayerHand{{2}, {3}, {5}}
+	gs.InitialiseSlicesWithDefaults()
+	gs.PlayerChannels[1] = nil
+
+	api := gs.alivePlayerIndices()
+
+	util.Assert(t, slices.Equal(api, []int{0, 2}))
+	// t.FailNow()
+}
