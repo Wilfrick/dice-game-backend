@@ -140,36 +140,13 @@ func (gameHandler *GameHandler) processLeaveGameHeadingBackToUnPH(thisChan chan 
 
 	gameHandler.removePlayerChannelFromGameMaintainingPlayability(thisChan)
 	gameHandler.GlobalUnassignedPlayerHandler.AddChannel(thisChan)
-	// if !gameHandler.gameState.GameInProgress {
-	// 	playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/"}
-	// 	message_handler_interface.Send(thisChan, playerLocationMessage)
-	// 	gameHandler.MoveChannel(thisChan, gameHandler.GlobalUnassignedPlayerHandler)
-	// 	return
-	// }
-	// // The game is in progress, remove the relevant player
-	// thisChanIndex := slices.Index[[]chan []byte](gameHandler.gameState.PlayerChannels, thisChan)
-	// gameHandler.GlobalUnassignedPlayerHandler.AddChannel(thisChan)
-	// gameHandler.gameState.PlayerChannels[thisChanIndex] = nil
-	// // currentPlayerQuit := thisChanIndex == gameHandler.gameState.CurrentPlayerIndex
-	// // gameHandler.gameState.RemovePlayer(thisChanIndex)
-	// gameHandler.gameState.SetPlayerInactive(thisChanIndex) // mark the player as inactive (so they will pass)
-
-	// // Then once we have moved the channel, we should inform the other players that they have left
-	// // and potentially update the CurrentPlayerIndex clientside.
-	// msg := messages.Message{TypeDescriptor: "PlayerLeft", Contents: thisChanIndex} // this tells the front end that this play is now inactive
-
-	// gameHandler.Broadcast(msg)
-
 }
 
 func (gameHandler GameHandler) Broadcast(message messages.Message, optional_use_wait_group ...bool) {
 	message_handler_interface.BroadcastLogic(gameHandler.gameState.PlayerChannels, message, optional_use_wait_group...)
 }
 func (gameHandler *GameHandler) RemoveChannel(thisChan chan []byte) {
-	// gameHandler.removePlayerChannelFromGameMaintainingPlayability(thisChan)
-	gameHandler.processLeaveGameHeadingBackToUnPH(thisChan)
+	gameHandler.removePlayerChannelFromGameMaintainingPlayability(thisChan)
 	delete(*gameHandler.channelLocations, thisChan) // This is also done at call site in main.
-	// gameHandler.gameState.PlayerChannels[thisChanIndex] = nil
-
 	// this channel will be cleared up higher up where RemoveChannel was called. We have removed all internal references to this channel.
 }

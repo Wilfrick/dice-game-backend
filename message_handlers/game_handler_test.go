@@ -152,7 +152,7 @@ func Test_singlePlayerLeavesGameInProgressWithOtherPlayers(t *testing.T) {
 	util.Assert(t, len(unPH.UnassignedPlayers) == 1)
 	util.Assert(t, unPH.UnassignedPlayers[0] == playerChan)
 }
-func xTest_singlePlayerLeavesGameInProgressWithOtherPlayer(t *testing.T) {
+func Test_singlePlayerLeavesGameInProgressWithOtherPlayer(t *testing.T) {
 	gh := GameHandler{}
 	gh.gameState.GameInProgress = true
 	gh.gameState.PlayerHands = []game.PlayerHand{game.PlayerHand([]int{2, 2, 2}), game.PlayerHand([]int{3, 3, 3})} //Give it a PlayerHands
@@ -175,23 +175,10 @@ func xTest_singlePlayerLeavesGameInProgressWithOtherPlayer(t *testing.T) {
 	// go gh.ProcessUserMessage(msg, thisChan)
 	gh.ProcessUserMessage(msg, thisChan)
 
-	// The following messages are sent in a random order which isn't ideal:
-	// otherChansMessage1 := <-otherChan
-	// _ = otherChansMessage1
-	// otherChansMessage2 := <-otherChan
-	// expectedMessage1 := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "GameResult", Contents: game.GameResult{1, "win"}})
-	// expectedMessage2 := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "PlayerLeft", Contents: 0})
-	// if slices.Equal(otherChansMessage1, expectedMessage1) {
-	// 	util.Assert(t, slices.Equal(otherChansMessage2, expectedMessage2))
-	// } else if slices.Equal(otherChansMessage1, expectedMessage2) {
-	// 	util.Assert(t, slices.Equal(otherChansMessage2, expectedMessage1))
-	// } else {
-	// 	t.Error("failed at the randomness")
-	// }
 	t.Log(gh.gameState.PlayerChannels)
-	util.Assert(t, len(gh.gameState.PlayerChannels) == 1)
-	util.Assert(t, gh.gameState.PlayerChannels[0] == otherChan)
-	util.Assert(t, len(gh.gameState.PlayerHands) == 1)
+	util.Assert(t, len(gh.gameState.PlayerChannels) == 2)
+	util.Assert(t, gh.gameState.PlayerChannels[0] == nil)
+	util.Assert(t, len(gh.gameState.PlayerHands) == 2)
 
 	util.Assert(t, len(unPH.UnassignedPlayers) == 1)
 	util.Assert(t, unPH.UnassignedPlayers[0] == thisChan)
