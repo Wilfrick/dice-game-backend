@@ -118,8 +118,16 @@ func (gameHandler *GameHandler) ProcessUserMessage(userMessage messages.Message,
 
 func (gameHandler *GameHandler) removePlayerChannelFromGameMaintainingPlayability(thisChan chan []byte) {
 	thisChanIndex := slices.Index[[]chan []byte](gameHandler.gameState.PlayerChannels, thisChan)
-	gameHandler.gameState.PlayerChannels[thisChanIndex] = nil
 	fmt.Printf("Player %d is being removed from the game while maintaining playability \n", thisChanIndex)
+	if thisChanIndex == -1 {
+		fmt.Println("Couldn't find the player that was attempting to leave. V bad")
+		return
+	}
+	gameHandler.gameState.PlayerChannels[thisChanIndex] = nil
+	gameHandler.gameState.FindNextAlivePlayerInclusive()
+	gameHandler.gameState.AllowableChannelLock = gameHandler.gameState.CurrentPlayerIndex
+	gameHandler.gameState.BroadcastNextPlayer()
+
 	msg := messages.Message{TypeDescriptor: "PlayerLeft", Contents: thisChanIndex} // this tells the front end that this play is now inactive
 	gameHandler.Broadcast(msg)
 	if !gameHandler.gameState.GameInProgress {

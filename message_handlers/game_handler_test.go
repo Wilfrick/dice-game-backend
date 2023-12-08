@@ -196,3 +196,26 @@ func xTest_singlePlayerLeavesGameInProgressWithOtherPlayer(t *testing.T) {
 	util.Assert(t, len(unPH.UnassignedPlayers) == 1)
 	util.Assert(t, unPH.UnassignedPlayers[0] == thisChan)
 }
+
+func Test_currentPlayerDisconnectsGameInProgress(t *testing.T) {
+	var gh GameHandler
+	gh.gameState.PlayerHands = []game.PlayerHand{{2}, {3}, {5}}
+	gh.gameState.InitialiseSlicesWithDefaults()
+	gh.gameState.GameInProgress = true
+	gh.gameState.CurrentPlayerIndex = 0
+	unPH := UnassignedPlayerHandler{}
+	channelLocations := message_handler_interface.ChannelLocations{}
+	unPH.channelLocations = &channelLocations
+	gh.channelLocations = &channelLocations
+	gh.GlobalUnassignedPlayerHandler = &unPH
+	for _, thisChan := range gh.gameState.PlayerChannels {
+		channelLocations[thisChan] = &gh
+	}
+	msg := messages.Message{TypeDescriptor: "LeaveGame"}
+	gh.ProcessUserMessage(msg, gh.gameState.PlayerChannels[0])
+
+	t.Log(len(gh.gameState.PlayerChannels))
+	util.Assert(t, len(gh.gameState.PlayerChannels) == 3)
+	util.Assert(t, gh.gameState.PlayerChannels[0] == nil)
+	util.Assert(t, gh.gameState.CurrentPlayerIndex == 1)
+}

@@ -37,7 +37,7 @@ func (gameState *GameState) randomiseCurrentHands() {
 	}
 }
 
-func (gameState *GameState) findNextAlivePlayerInclusive() error {
+func (gameState *GameState) FindNextAlivePlayerInclusive() error {
 	// startingIndex := gameState.CurrentPlayerIndex
 	alivePlayerIndices := gameState.alivePlayerIndices()
 	if len(alivePlayerIndices) < 1 {
@@ -48,7 +48,7 @@ func (gameState *GameState) findNextAlivePlayerInclusive() error {
 	if found {
 		return nil
 	}
-	fmt.Println(indexInAlivePlayerIndices, alivePlayerIndices)
+	// fmt.Println(indexInAlivePlayerIndices, alivePlayerIndices)
 	gameState.CurrentPlayerIndex = alivePlayerIndices[(indexInAlivePlayerIndices)%len(alivePlayerIndices)]
 	return nil
 	// playerDead := len(gameState.PlayerHands[startingIndex]) == 0 && slices.Index(alivePlayerIndices, startingIndex) != -1
@@ -71,7 +71,7 @@ func (gameState *GameState) RemovePlayer(playerIndex int) error {
 	}
 	gameState.PlayerHands[playerIndex] = PlayerHand{}
 	if gameState.CurrentPlayerIndex == playerIndex {
-		err := gameState.findNextAlivePlayerInclusive()
+		err := gameState.FindNextAlivePlayerInclusive()
 		if err != nil {
 			return err
 		}
@@ -89,6 +89,9 @@ func (gameState *GameState) RemovePlayer(playerIndex int) error {
 func (gameState *GameState) CleanUpInactivePlayers() {
 	for i := len(gameState.PlayerChannels) - 1; i >= 0; i-- {
 		if gameState.PlayerChannels[i] == nil {
+			if i < gameState.CurrentPlayerIndex {
+				gameState.CurrentPlayerIndex--
+			}
 			gameState.PlayerHands = slices.Delete(gameState.PlayerHands, i, i+1)
 			gameState.PlayerChannels = slices.Delete(gameState.PlayerChannels, i, i+1)
 			gameState.PalacifoablePlayers = slices.Delete(gameState.PalacifoablePlayers, i, i+1)

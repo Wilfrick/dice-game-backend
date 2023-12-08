@@ -24,7 +24,7 @@ func (gameState GameState) broadcastPlayerMove(playerMove PlayerMove) {
 	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundUpdate", Contents: RoundUpdate{MoveMade: playerMove, PlayerIndex: gameState.CurrentPlayerIndex}})
 }
 
-func (gameState GameState) broadcastNextPlayer() {
+func (gameState GameState) BroadcastNextPlayer() {
 	gameState.Broadcast(messages.Message{TypeDescriptor: "RoundResult", Contents: RoundResult{PlayerIndex: gameState.CurrentPlayerIndex, Result: "next"}})
 }
 
@@ -53,7 +53,7 @@ func (gameState *GameState) processPlayerBet(playerMove PlayerMove) bool {
 		fmt.Println(err.Error())
 		return false
 	}
-	gameState.broadcastNextPlayer()
+	gameState.BroadcastNextPlayer()
 	fmt.Println("Bet processed and broadcast RoundResult next")
 	return true
 }

@@ -51,7 +51,7 @@ func Test_nextPlayerAliveAlivePlayers(t *testing.T) {
 	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{5}), PlayerHand([]int{4, 5, 6})}
 	gameState.CurrentPlayerIndex = 0
-	err := gameState.findNextAlivePlayerInclusive()
+	err := gameState.FindNextAlivePlayerInclusive()
 	if err != nil {
 		t.Fail()
 	}
@@ -64,7 +64,7 @@ func Test_nextPlayerAliveDeadPlayer(t *testing.T) {
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{}), PlayerHand([]int{5}), PlayerHand([]int{4, 5, 6})}
 	gameState.InitialiseSlicesWithDefaults()
 	gameState.CurrentPlayerIndex = 0
-	err := gameState.findNextAlivePlayerInclusive()
+	err := gameState.FindNextAlivePlayerInclusive()
 	if err != nil {
 		t.Fail()
 	}
@@ -200,4 +200,34 @@ func Test_StartNewRoundDeletingInactivePlayers(t *testing.T) { // Jim
 
 	util.Assert(t, len(gs.PlayerChannels) == 2)
 	util.Assert(t, len(gs.PlayerHands) == 2)
+}
+
+func Test_CleanInactivePlayersCurrentPlayerIndexChangedByInactivePlayers(t *testing.T) {
+	var gs GameState
+	gs.PlayerHands = []PlayerHand{{2}, {3}, {5}}
+	gs.InitialiseSlicesWithDefaults()
+
+	gs.CurrentPlayerIndex = 2
+	gs.PlayerChannels[1] = nil
+
+	gs.CleanUpInactivePlayers()
+
+	t.Log(gs.CurrentPlayerIndex)
+	util.Assert(t, len(gs.PlayerChannels) == 2)
+	util.Assert(t, gs.CurrentPlayerIndex == 1)
+}
+
+func Test_startNewRoundCurrentPlayerIndexChangedByInactivePlayers(t *testing.T) {
+	var gs GameState
+	gs.PlayerHands = []PlayerHand{{2}, {3}, {5}}
+	gs.InitialiseSlicesWithDefaults()
+
+	gs.CurrentPlayerIndex = 2
+	gs.PlayerChannels[1] = nil
+
+	gs.startNewRound()
+
+	t.Log(gs.CurrentPlayerIndex)
+	util.Assert(t, len(gs.PlayerChannels) == 2)
+	util.Assert(t, gs.CurrentPlayerIndex == 1)
 }

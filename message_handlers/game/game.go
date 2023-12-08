@@ -188,7 +188,7 @@ func (gameState *GameState) updatePlayerIndex(moveType MoveType, optional_player
 		gameState.CurrentPlayerIndex += 1
 		gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
 	}
-	err := gameState.findNextAlivePlayerInclusive()
+	err := gameState.FindNextAlivePlayerInclusive()
 	return err
 }
 
