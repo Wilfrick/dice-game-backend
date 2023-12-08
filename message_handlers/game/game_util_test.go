@@ -9,6 +9,7 @@ import (
 
 func Test_RemoveDice(t *testing.T) {
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{5, 4, 1}), PlayerHand([]int{4, 5, 6})}
 
 	PLAYER_INDEX := 1
@@ -28,6 +29,7 @@ func Test_RemoveDice(t *testing.T) {
 
 func Test_RemoveDiceKilling(t *testing.T) {
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{5}), PlayerHand([]int{4, 5, 6})}
 	PLAYER_INDEX := 1
 	death, err := gameState.removeDice(PLAYER_INDEX)
@@ -46,6 +48,7 @@ func Test_RemoveDiceKilling(t *testing.T) {
 
 func Test_nextPlayerAliveAlivePlayers(t *testing.T) {
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{5}), PlayerHand([]int{4, 5, 6})}
 	gameState.CurrentPlayerIndex = 0
 	err := gameState.findNextAlivePlayerInclusive()
@@ -57,6 +60,7 @@ func Test_nextPlayerAliveAlivePlayers(t *testing.T) {
 }
 func Test_nextPlayerAliveDeadPlayer(t *testing.T) {
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{}), PlayerHand([]int{5}), PlayerHand([]int{4, 5, 6})}
 	gameState.CurrentPlayerIndex = 0
 	err := gameState.findNextAlivePlayerInclusive()
@@ -127,4 +131,16 @@ func Test_removePlayerCausingVictory(t *testing.T) {
 	expectedMessage := messages.CreateEncodedMessage(messages.Message{TypeDescriptor: "GameResult", Contents: GameResult{1, "win"}})
 	util.Assert(t, gameState.GameInProgress == false)
 	util.Assert(t, slices.Equal(winningResult, expectedMessage))
+}
+
+func Test_cleanUpInactivePlayers(t *testing.T) {
+	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 5))
+	gameState.InitialiseSlicesWithDefaults()
+	t.Log(gameState.PlayerChannels)
+	gameState.PlayerChannels[3] = nil
+
+	gameState.CleanUpInactivePlayers()
+	t.Log(len(gameState.PlayerChannels))
+	util.Assert(t, len(gameState.PlayerChannels) == 4)
 }

@@ -19,6 +19,7 @@ type GameState struct {
 	PalacifoablePlayers []bool
 	IsPalacifoRound     bool
 	// GlobalUnassignedPlayerHandler message_handlers.MessageHandler
+	// InactivePlayers []bool
 }
 
 type GamesMap map[string]*GameState
@@ -120,6 +121,8 @@ func (gameState *GameState) StartNewGame() {
 
 func (gameState *GameState) startNewRound() {
 	fmt.Println("Called StartNewRound")
+	// need to purge inactivePlayers
+	gameState.CleanUpInactivePlayers()
 	gameState.randomiseCurrentHands()
 	gameState.distributeHands()
 	// Zero out previous

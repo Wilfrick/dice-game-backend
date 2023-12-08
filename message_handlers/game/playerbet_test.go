@@ -60,6 +60,7 @@ func Test_checkPlayerIndexIncrementsWrapArround(t *testing.T) {
 
 func Test_checkPlayerIndexIncrementsDeadPlayer(t *testing.T) {
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 3, 4, 5}), PlayerHand([]int{}), PlayerHand([]int{4, 5, 4})}
 	gameState.CurrentPlayerIndex = 0
 	gameState.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{NumDice: 2, FaceVal: 2}}
@@ -76,6 +77,7 @@ func Test_checkPlayerIndexIncrementsDeadPlayer(t *testing.T) {
 func Test_checkPlayerIndexAllPlayersDead(t *testing.T) {
 
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{}), PlayerHand([]int{}), PlayerHand([]int{})}
 	gameState.CurrentPlayerIndex = 0
 	gameState.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{NumDice: 2, FaceVal: 2}}
@@ -92,6 +94,7 @@ func Test_checkPlayerIndexAllPlayersDead(t *testing.T) {
 func Test_checkPlayerIndexSinglePlayerAlive(t *testing.T) {
 
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{5, 5}), PlayerHand([]int{}), PlayerHand([]int{})}
 	gameState.CurrentPlayerIndex = 0
 	gameState.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{NumDice: 2, FaceVal: 2}}
@@ -105,6 +108,7 @@ func Test_checkPlayerIndexSinglePlayerAlive(t *testing.T) {
 
 func Test_updatePlayerIndexDudoTrue(t *testing.T) {
 	var gs GameState
+	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 3}), PlayerHand([]int{1}), PlayerHand([]int{5})}
 	gs.CurrentPlayerIndex = 1
 	losing_player_index := 0
@@ -131,6 +135,7 @@ func Test_updatePlayerIndexDudoFalse(t *testing.T) {
 
 func Test_updatePlayerIndexCalza(t *testing.T) {
 	var gs GameState
+	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 3}), PlayerHand([]int{1, 2}), PlayerHand([]int{5})}
 	gs.CurrentPlayerIndex = 1
 	losing_player_index := 1

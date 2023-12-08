@@ -2,6 +2,7 @@ package game
 
 import (
 	"HigherLevelPerudoServer/messages"
+	"HigherLevelPerudoServer/util"
 	"errors"
 	"fmt"
 	"slices"
@@ -39,7 +40,7 @@ func (gameState *GameState) randomiseCurrentHands() {
 func (gameState *GameState) findNextAlivePlayerInclusive() error {
 	startingIndex := gameState.CurrentPlayerIndex
 
-	playerDead := len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
+	playerDead := len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0 && gameState.PlayerChannels[startingIndex] != nil
 	for playerDead {
 		gameState.CurrentPlayerIndex += 1
 		gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
@@ -47,7 +48,7 @@ func (gameState *GameState) findNextAlivePlayerInclusive() error {
 			err := errors.New("passed a game that has already been won")
 			return err
 		}
-		playerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
+		playerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0 && gameState.PlayerChannels[gameState.CurrentPlayerIndex] != nil
 	}
 	return nil
 }
@@ -73,4 +74,28 @@ func (gameState *GameState) RemovePlayer(playerIndex int) error {
 	gameState.PlayerHands = slices.Delete(gameState.PlayerHands, playerIndex, playerIndex+1)
 
 	return nil
+}
+func (gameState *GameState) CleanUpInactivePlayers() {
+	for i := len(gameState.PlayerChannels) - 1; i >= 0; i-- {
+		if gameState.PlayerChannels[i] == nil {
+			gameState.PlayerHands = slices.Delete(gameState.PlayerHands, i, i+1)
+			gameState.PlayerChannels = slices.Delete(gameState.PlayerChannels, i, i+1)
+			gameState.PalacifoablePlayers = slices.Delete(gameState.PalacifoablePlayers, i, i+1)
+		}
+	}
+}
+
+func (gameState *GameState) InitialiseSlicesWithDefaults() {
+	max_slice_length := max(len(gameState.PlayerChannels), len(gameState.PlayerHands), len(gameState.PalacifoablePlayers))
+	for len(gameState.PlayerChannels) < max_slice_length {
+		c := make(chan []byte)
+		util.ChanSink([]chan []byte{c})
+		gameState.PlayerChannels = append(gameState.PlayerChannels, c)
+	}
+	for len(gameState.PlayerHands) < max_slice_length {
+		gameState.PlayerHands = append(gameState.PlayerHands, PlayerHand{})
+	}
+	for len(gameState.PalacifoablePlayers) < max_slice_length {
+		gameState.PalacifoablePlayers = append(gameState.PalacifoablePlayers, false)
+	}
 }

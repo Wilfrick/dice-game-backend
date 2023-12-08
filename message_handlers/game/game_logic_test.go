@@ -8,6 +8,8 @@ import (
 
 func Test_alivePlayerIndices(t *testing.T) { // ✓
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
+
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{5, 4, 1}), PlayerHand([]int{4, 5, 6})}
 	alivePlayerIndices := gameState.alivePlayerIndices()
 	t.Log(alivePlayerIndices)
@@ -18,6 +20,7 @@ func Test_alivePlayerIndices(t *testing.T) { // ✓
 
 func Test_previousAlivePlayer(t *testing.T) { // ✓
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{5, 4, 1}), PlayerHand([]int{4, 5, 6})}
 	gameState.CurrentPlayerIndex = 1
 	previousAlivePlayer, err := gameState.PreviousAlivePlayer()
@@ -31,6 +34,7 @@ func Test_previousAlivePlayer(t *testing.T) { // ✓
 
 func Test_previousAlivePlayerCurrentPlayer0(t *testing.T) { // ✓
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{5, 4, 1}), PlayerHand([]int{4, 5, 6})}
 	gameState.CurrentPlayerIndex = 0
 	previousAlivePlayer, err := gameState.PreviousAlivePlayer()
@@ -44,6 +48,7 @@ func Test_previousAlivePlayerCurrentPlayer0(t *testing.T) { // ✓
 
 func Test_previousAlivePlayerOneDead(t *testing.T) { // fine, similar to above (doesn't have to skip over dead player)
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{}), PlayerHand([]int{4, 5, 6})}
 	gameState.CurrentPlayerIndex = 0
 	previousAlivePlayer, err := gameState.PreviousAlivePlayer()
@@ -56,6 +61,7 @@ func Test_previousAlivePlayerOneDead(t *testing.T) { // fine, similar to above (
 
 func Test_previousAlivePlayerAllDead(t *testing.T) { // ✓
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{}), PlayerHand([]int{}), PlayerHand([]int{})}
 	gameState.CurrentPlayerIndex = 0
 	_, err := gameState.PreviousAlivePlayer()
@@ -68,6 +74,7 @@ func Test_previousAlivePlayerAllDead(t *testing.T) { // ✓
 
 func Test_previousAlivePlayerOnePlayerAlive(t *testing.T) { // isn't this supposed to be a win? No, that is computed in updatePlayerIndex ✓
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{5, 6, 2}), PlayerHand([]int{}), PlayerHand([]int{})}
 	gameState.CurrentPlayerIndex = 0
 	_, err := gameState.PreviousAlivePlayer()
@@ -82,6 +89,7 @@ func Test_previousAlivePlayerOnePlayerAlive(t *testing.T) { // isn't this suppos
 
 func Test_previousAlivePlayerOneSkipInternal(t *testing.T) {
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{}), PlayerHand([]int{4, 5, 6})}
 	gameState.CurrentPlayerIndex = 2
 	previousAlivePlayer, err := gameState.PreviousAlivePlayer()
@@ -94,6 +102,7 @@ func Test_previousAlivePlayerOneSkipInternal(t *testing.T) {
 
 func Test_previousAlivePlayerOneDeadSkipEnd(t *testing.T) {
 	var gameState GameState
+	gameState.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{1, 2, 3}), PlayerHand([]int{4, 5, 6}), PlayerHand([]int{})}
 	gameState.CurrentPlayerIndex = 0
 	previousAlivePlayer, err := gameState.PreviousAlivePlayer()

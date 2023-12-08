@@ -101,6 +101,7 @@ func Test_processPlayerDudoFalse(t *testing.T) {
 
 func Test_DudoIdentifyLosersWinnersDudoFalse(t *testing.T) {
 	var gs GameState
+	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 2}), PlayerHand([]int{1, 1}), PlayerHand([]int{4, 4})}
 	gs.PrevMove = PlayerMove{MoveType: BET, Value: Bet{5, 2}}
 	gs.CurrentPlayerIndex = 1
@@ -112,6 +113,7 @@ func Test_DudoIdentifyLosersWinnersDudoFalse(t *testing.T) {
 
 func Test_DudoIdentifyLosersWinnersDudoTrue(t *testing.T) {
 	var gs GameState
+	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 2}), PlayerHand([]int{1, 1}), PlayerHand([]int{4, 4})}
 	gs.PrevMove = PlayerMove{MoveType: BET, Value: Bet{6, 2}}
 	gs.CurrentPlayerIndex = 1
@@ -123,6 +125,7 @@ func Test_DudoIdentifyLosersWinnersDudoTrue(t *testing.T) {
 
 func Test_DudoIdentifyLosersWinnersWrappers(t *testing.T) {
 	var gs GameState
+	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	gs.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 2}), PlayerHand([]int{1, 1}), PlayerHand([]int{4, 4})}
 	gs.PrevMove = PlayerMove{MoveType: BET, Value: Bet{6, 2}}
 	gs.CurrentPlayerIndex = 0

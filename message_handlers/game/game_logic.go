@@ -67,7 +67,7 @@ func (gameState GameState) alivePlayerIndices() []int {
 	// 	util.Map(func(p PlayerHand) int { return len(p) }, gameState.PlayerHands))
 	alivePlayerIndices := make([]int, 0, len(gameState.PlayerHands))
 	for i, playerHand := range gameState.PlayerHands {
-		if len(playerHand) > 0 {
+		if (gameState.PlayerChannels[i] != nil) && len(playerHand) > 0 {
 			alivePlayerIndices = append(alivePlayerIndices, i)
 		}
 	}

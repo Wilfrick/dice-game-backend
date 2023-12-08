@@ -10,6 +10,9 @@ func (gameState GameState) send(player_index int, msg messages.Message, wait_gro
 	if len(wait_groups) == 1 {
 		wait_groups[0].Add(1)
 	}
+	if gameState.PlayerChannels[player_index] == nil {
+		return
+	}
 
 	// fmt.Println("Called send")
 	// fmt.Println("logging out message", msg, player_index)
