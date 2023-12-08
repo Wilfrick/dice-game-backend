@@ -26,7 +26,7 @@ func Test_generateNewHands(t *testing.T) {
 
 func Test_isBetTrueSimpleCase(t *testing.T) {
 	var gameState GameState
-	gameState.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{5, 2}}
+	gameState.RoundMoveHistory = []PlayerMove{{MoveType: "Bet", Value: Bet{5, 2}}}
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 2}), PlayerHand([]int{2, 2})} //Exactly true
 	if !gameState.isBetTrue() {
 		t.Fail()
@@ -52,7 +52,7 @@ func Test_isBetTrueSimpleCase(t *testing.T) {
 
 func Test_isBetTrueOnesCase(t *testing.T) {
 	var gameState GameState
-	gameState.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{5, 2}}
+	gameState.RoundMoveHistory = []PlayerMove{{MoveType: "Bet", Value: Bet{5, 2}}}
 	gameState.PlayerHands = []PlayerHand{PlayerHand([]int{2, 2, 2}), PlayerHand([]int{1, 1})} //Exactly true
 	if !gameState.isBetTrue() {
 		t.Fail()
@@ -82,7 +82,7 @@ func Test_processPlayerMoveDudoFalse(t *testing.T) {
 	gs.PlayerChannels = util.InitialiseChans(make([]chan []byte, 3))
 	util.ChanSink(gs.PlayerChannels)
 	gs.PalacifoablePlayers = []bool{true, true, true}
-	gs.PrevMove = PlayerMove{MoveType: BET, Value: Bet{5, 2}}
+	gs.RoundMoveHistory = []PlayerMove{{MoveType: BET, Value: Bet{5, 2}}}
 	gs.CurrentPlayerIndex = 1
 	playerMove := PlayerMove{MoveType: DUDO}     // Dudo False, so P1 loses a dice
 	validity := gs.ProcessPlayerMove(playerMove) // not a big fan of 'validity', would rather 'move could be made' or similar
@@ -106,7 +106,7 @@ func Test_processPlayerMoveDudoTrue(t *testing.T) {
 			<-gs.PlayerChannels[1]
 		}
 	}()
-	gs.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{5, 2}}
+	gs.RoundMoveHistory = []PlayerMove{{MoveType: "Bet", Value: Bet{5, 2}}}
 	gs.CurrentPlayerIndex = 1
 	playerMove := PlayerMove{MoveType: "Dudo"} // True only 4 2's
 	validity := gs.ProcessPlayerMove(playerMove)
@@ -114,8 +114,8 @@ func Test_processPlayerMoveDudoTrue(t *testing.T) {
 		t.Error(validity)
 	}
 	t.Log(gs.CurrentPlayerIndex)
-	util.Assert(t, gs.CurrentPlayerIndex == 0) // ✓
-
+	util.Assert(t, gs.CurrentPlayerIndex == 0)    // ✓
+	util.Assert(t, len(gs.RoundMoveHistory) == 0) // ✓
 }
 
 func Test_processPlayerMoveDudoFalseKilling(t *testing.T) {
@@ -139,7 +139,7 @@ func Test_processPlayerMoveDudoFalseKilling(t *testing.T) {
 			<-gs.PlayerChannels[2]
 		}
 	}()
-	gs.PrevMove = PlayerMove{MoveType: "Bet", Value: Bet{2, 2}}
+	gs.RoundMoveHistory = []PlayerMove{{MoveType: "Bet", Value: Bet{2, 2}}}
 	gs.PalacifoablePlayers = []bool{true, true, true}
 	gs.CurrentPlayerIndex = 1
 	playerMove := PlayerMove{MoveType: "Dudo"} // False 3 2's, so P1 loses and dies

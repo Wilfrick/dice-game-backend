@@ -14,11 +14,11 @@ import (
 )
 
 func tidyConnection(thisChan chan []byte, thisClientID string, channelLocations *message_handler_interface.ChannelLocations, globalClientIDsToChannel *map[string]chan []byte) {
-	channelHandler := (*channelLocations)[thisChan]
+	channelHandler, ok := (*channelLocations)[thisChan]
 	if channelHandler != nil {
 		channelHandler.RemoveChannel(thisChan)
 	} else {
-		fmt.Println("Channel Handler was nil")
+		fmt.Printf("Channel Handler was nil and ok was %t \n", ok)
 	}
 	// (*channelLocations)[thisChan].MoveChannel(thisChan, nil)
 	delete(*channelLocations, thisChan)

@@ -2,6 +2,7 @@ package game
 
 import (
 	"HigherLevelPerudoServer/messages"
+	"HigherLevelPerudoServer/util"
 	"errors"
 	"fmt"
 	"slices"
@@ -36,20 +37,31 @@ func (gameState *GameState) randomiseCurrentHands() {
 	}
 }
 
-func (gameState *GameState) findNextAlivePlayerInclusive() error {
-	startingIndex := gameState.CurrentPlayerIndex
-
-	playerDead := len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
-	for playerDead {
-		gameState.CurrentPlayerIndex += 1
-		gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
-		if gameState.CurrentPlayerIndex == startingIndex {
-			err := errors.New("passed a game that has already been won")
-			return err
-		}
-		playerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0
+func (gameState *GameState) FindNextAlivePlayerInclusive() error {
+	// startingIndex := gameState.CurrentPlayerIndex
+	alivePlayerIndices := gameState.alivePlayerIndices()
+	if len(alivePlayerIndices) < 1 {
+		err := errors.New("passed a game that has already been won")
+		return err
 	}
+	indexInAlivePlayerIndices, found := slices.BinarySearch(alivePlayerIndices, gameState.CurrentPlayerIndex)
+	if found {
+		return nil
+	}
+	// fmt.Println(indexInAlivePlayerIndices, alivePlayerIndices)
+	gameState.CurrentPlayerIndex = alivePlayerIndices[(indexInAlivePlayerIndices)%len(alivePlayerIndices)]
 	return nil
+	// playerDead := len(gameState.PlayerHands[startingIndex]) == 0 && slices.Index(alivePlayerIndices, startingIndex) != -1
+	// for playerDead {
+	// 	gameState.CurrentPlayerIndex += 1
+	// 	gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
+	// 	if gameState.CurrentPlayerIndex == startingIndex {
+	// 		err := errors.New("passed a game that has already been won")
+	// 		return err
+	// 	}
+	// 	playerDead = len(gameState.PlayerHands[gameState.CurrentPlayerIndex]) == 0 && slices.Index(alivePlayerIndices, gameState.CurrentPlayerIndex) != -1
+	// }
+	// return nil
 }
 
 func (gameState *GameState) RemovePlayer(playerIndex int) error {
@@ -59,7 +71,7 @@ func (gameState *GameState) RemovePlayer(playerIndex int) error {
 	}
 	gameState.PlayerHands[playerIndex] = PlayerHand{}
 	if gameState.CurrentPlayerIndex == playerIndex {
-		err := gameState.findNextAlivePlayerInclusive()
+		err := gameState.FindNextAlivePlayerInclusive()
 		if err != nil {
 			return err
 		}
@@ -73,4 +85,31 @@ func (gameState *GameState) RemovePlayer(playerIndex int) error {
 	gameState.PlayerHands = slices.Delete(gameState.PlayerHands, playerIndex, playerIndex+1)
 
 	return nil
+}
+func (gameState *GameState) CleanUpInactivePlayers() {
+	for i := len(gameState.PlayerChannels) - 1; i >= 0; i-- {
+		if gameState.PlayerChannels[i] == nil {
+			if i < gameState.CurrentPlayerIndex {
+				gameState.CurrentPlayerIndex--
+			}
+			gameState.PlayerHands = slices.Delete(gameState.PlayerHands, i, i+1)
+			gameState.PlayerChannels = slices.Delete(gameState.PlayerChannels, i, i+1)
+			gameState.PalacifoablePlayers = slices.Delete(gameState.PalacifoablePlayers, i, i+1)
+		}
+	}
+}
+
+func (gameState *GameState) InitialiseSlicesWithDefaults() {
+	max_slice_length := max(len(gameState.PlayerChannels), len(gameState.PlayerHands), len(gameState.PalacifoablePlayers))
+	for len(gameState.PlayerChannels) < max_slice_length {
+		c := make(chan []byte)
+		util.ChanSink([]chan []byte{c})
+		gameState.PlayerChannels = append(gameState.PlayerChannels, c)
+	}
+	for len(gameState.PlayerHands) < max_slice_length {
+		gameState.PlayerHands = append(gameState.PlayerHands, PlayerHand{})
+	}
+	for len(gameState.PalacifoablePlayers) < max_slice_length {
+		gameState.PalacifoablePlayers = append(gameState.PalacifoablePlayers, false)
+	}
 }

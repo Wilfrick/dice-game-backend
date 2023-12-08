@@ -8,17 +8,18 @@ import (
 )
 
 type GameState struct {
-	GameID               string
-	PlayerHands          []PlayerHand
-	CurrentPlayerIndex   int // should be < len(PlayerHands)
-	PlayerChannels       []chan []byte
-	PrevMove             PlayerMove
+	GameID             string
+	PlayerHands        []PlayerHand
+	CurrentPlayerIndex int // should be < len(PlayerHands)
+	PlayerChannels     []chan []byte
+	// PrevMove             PlayerMove // has been replaced with a PrevMove method that uses RoundMoveHistory
 	GameInProgress       bool
 	AllowableChannelLock int // should live with PlayerChannels, wherever that ends up
 	// channelLocations              *message_handlers.ChannelLocations
 	PalacifoablePlayers []bool
 	IsPalacifoRound     bool
 	// GlobalUnassignedPlayerHandler message_handlers.MessageHandler
+	RoundMoveHistory []PlayerMove
 }
 
 type GamesMap map[string]*GameState
@@ -32,8 +33,9 @@ const ( // ✓
 )
 
 type PlayerMove struct {
-	MoveType MoveType // "Bet", "Dudo", "Calza"
-	Value    Bet
+	MoveType    MoveType // "Bet", "Dudo", "Calza"
+	Value       Bet
+	PlayerIndex int
 }
 type Result string
 
@@ -120,10 +122,13 @@ func (gameState *GameState) StartNewGame() {
 
 func (gameState *GameState) startNewRound() {
 	fmt.Println("Called StartNewRound")
+	// need to purge inactivePlayers
+	gameState.CleanUpInactivePlayers()
 	gameState.randomiseCurrentHands()
 	gameState.distributeHands()
 	// Zero out previous
-	gameState.PrevMove = PlayerMove{} // 'zero out' the previous move
+	// gameState.PrevMove = PlayerMove{} // 'zero out' the previous move
+	gameState.RoundMoveHistory = []PlayerMove{}
 	gameState.IsPalacifoRound = false
 
 	InitialPlayerHandLengths := PlayerHandLengthsUpdate{util.Map(func(x PlayerHand) int { return len(x) }, gameState.PlayerHands)}
@@ -151,7 +156,11 @@ func (gameState *GameState) ProcessPlayerMove(playerMove PlayerMove) bool {
 	fmt.Printf("CPI %d || ACL %d \n", gameState.CurrentPlayerIndex, gameState.AllowableChannelLock)
 	switch playerMove.MoveType {
 	case BET:
-		return gameState.processPlayerBet(playerMove)
+		wasAbleToProcessMove := gameState.processPlayerBet(playerMove)
+		if wasAbleToProcessMove {
+			gameState.RoundMoveHistory = append(gameState.RoundMoveHistory, playerMove)
+		}
+		return wasAbleToProcessMove
 	case DUDO:
 		return gameState.processPlayerDudo()
 	case CALZA:
@@ -179,7 +188,7 @@ func (gameState *GameState) updatePlayerIndex(moveType MoveType, optional_player
 		gameState.CurrentPlayerIndex += 1
 		gameState.CurrentPlayerIndex %= len(gameState.PlayerHands)
 	}
-	err := gameState.findNextAlivePlayerInclusive()
+	err := gameState.FindNextAlivePlayerInclusive()
 	return err
 }
 

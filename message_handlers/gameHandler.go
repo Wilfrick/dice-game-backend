@@ -72,6 +72,7 @@ func (gameHandler *GameHandler) ProcessUserMessage(userMessage messages.Message,
 			fmt.Println(err.Error())
 			return
 		}
+		playerMove.PlayerIndex = thisChanIndex
 		fmt.Println("Calling gamestate.processPlayerMove")
 		couldProcessMove := gameHandler.gameState.ProcessPlayerMove(playerMove)
 		if !couldProcessMove {
@@ -87,7 +88,11 @@ func (gameHandler *GameHandler) ProcessUserMessage(userMessage messages.Message,
 
 		// will need to let players know the result of updating the game state
 	case "LeaveGame":
-		gameHandler.processLeaveGame(thisChan)
+		// a player has left a game that may or may not be in progress
+		// gameHandler.removePlayerChannelFromGameMaintainingPlayability(thisChan)
+		// this player wants to go back to the landing page, so we will move them there
+		// gameHandler.GlobalUnassignedPlayerHandler.AddChannel(thisChan)
+		gameHandler.processLeaveGameHeadingBackToUnPH(thisChan)
 
 	case "ReturnAllToLobby":
 		fmt.Println("A player tried to return all to the lobby")
@@ -103,40 +108,45 @@ func (gameHandler *GameHandler) ProcessUserMessage(userMessage messages.Message,
 		}
 
 		(*gameHandler.GlobalUnassignedPlayerHandler.LobbyMap)[new_lobby.LobbyID] = &new_lobby
-		numLobbyPlayers := len(new_lobby.LobbyPlayerChannels) // similar code in lines 85-88 of unPHandler.go, possible refactoring in future
-		lobbyJoinResponse := LobbyJoinResponse{userReadableResponse: "Successfully joined lobby with given ID", LobbyID: new_lobby.LobbyID, NumPlayers: numLobbyPlayers}
-		msg := messages.Message{TypeDescriptor: "Lobby Join Accepted", Contents: lobbyJoinResponse}
-		new_lobby.Broadcast(msg)
+		// numLobbyPlayers := len(new_lobby.LobbyPlayerChannels) // similar code in lines 85-88 of unPHandler.go, possible refactoring in future
+		// lobbyJoinResponse := LobbyJoinResponse{userReadableResponse: "Successfully joined lobby with given ID", LobbyID: new_lobby.LobbyID, NumPlayers: numLobbyPlayers}
+		// msg := messages.Message{TypeDescriptor: "Lobby Join Accepted", Contents: lobbyJoinResponse}
+		// new_lobby.Broadcast(msg)
 	}
 
 }
 
-func (gameHandler *GameHandler) processLeaveGame(thisChan chan []byte) {
-	fmt.Printf("Player %d tried to leave the game \n", slices.Index[[]chan []byte](gameHandler.gameState.PlayerChannels, thisChan))
-	playerLocationMessage := messages.Message{TypeDescriptor: "PlayerLocation", Contents: "/"}
-	if gameHandler.gameState.GameInProgress {
-		// If the game is in progress, remove the relevant player
-		thisChanIndex := slices.Index[[]chan []byte](gameHandler.gameState.PlayerChannels, thisChan)
-		// currentPlayerQuit := thisChanIndex == gameHandler.gameState.CurrentPlayerIndex
-		gameHandler.gameState.RemovePlayer(thisChanIndex)
-
-		// Then once we have moved the channel, we should inform the other players that they have left
-		// and potentially update the CurrentPlayerIndex clientside.
-		msg := messages.Message{TypeDescriptor: "PlayerLeft", Contents: thisChanIndex}
-		defer func() {
-			gameHandler.Broadcast(msg)
-			// newCurrentPlayerIndex := messages.Message{TypeDescriptor: "RoundResult", Contents: game.RoundResult{PlayerIndex: gameHandler.gameState.CurrentPlayerIndex, Result: "next"}}
-			// gameHandler.Broadcast(newCurrentPlayerIndex)
-		}()
+func (gameHandler *GameHandler) removePlayerChannelFromGameMaintainingPlayability(thisChan chan []byte) {
+	thisChanIndex := slices.Index[[]chan []byte](gameHandler.gameState.PlayerChannels, thisChan)
+	fmt.Printf("Player %d is being removed from the game while maintaining playability \n", thisChanIndex)
+	if thisChanIndex == -1 {
+		fmt.Println("Couldn't find the player that was attempting to leave. V bad")
+		return
 	}
-	message_handler_interface.Send(thisChan, playerLocationMessage)
-	gameHandler.MoveChannel(thisChan, gameHandler.GlobalUnassignedPlayerHandler)
+	gameHandler.gameState.PlayerChannels[thisChanIndex] = nil
+	gameHandler.gameState.FindNextAlivePlayerInclusive()
+	gameHandler.gameState.AllowableChannelLock = gameHandler.gameState.CurrentPlayerIndex
+	gameHandler.gameState.BroadcastNextPlayer()
 
+	msg := messages.Message{TypeDescriptor: "PlayerLeft", Contents: thisChanIndex} // this tells the front end that this play is now inactive
+	gameHandler.Broadcast(msg)
+	if !gameHandler.gameState.GameInProgress {
+		gameHandler.gameState.CleanUpInactivePlayers()
+	}
+}
+
+func (gameHandler *GameHandler) processLeaveGameHeadingBackToUnPH(thisChan chan []byte) {
+	fmt.Printf("Player %d tried to leave the game \n", slices.Index[[]chan []byte](gameHandler.gameState.PlayerChannels, thisChan))
+
+	gameHandler.removePlayerChannelFromGameMaintainingPlayability(thisChan)
+	gameHandler.GlobalUnassignedPlayerHandler.AddChannel(thisChan)
 }
 
 func (gameHandler GameHandler) Broadcast(message messages.Message, optional_use_wait_group ...bool) {
 	message_handler_interface.BroadcastLogic(gameHandler.gameState.PlayerChannels, message, optional_use_wait_group...)
 }
 func (gameHandler *GameHandler) RemoveChannel(thisChan chan []byte) {
-	gameHandler.processLeaveGame(thisChan)
+	gameHandler.removePlayerChannelFromGameMaintainingPlayability(thisChan)
+	delete(*gameHandler.channelLocations, thisChan) // This is also done at call site in main.
+	// this channel will be cleared up higher up where RemoveChannel was called. We have removed all internal references to this channel.
 }
